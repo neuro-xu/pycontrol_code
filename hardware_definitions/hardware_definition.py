@@ -7,12 +7,19 @@ board = Breakout_1_2()
 
 # Instantiate Devices.
 left_poke = Poke(board.port_1, rising_event="left_poke", falling_event="left_poke_out")
-left_port = left_poke
 center_poke = Poke(board.port_2, rising_event="center_poke", falling_event="center_poke_out")
-center_port = center_poke
 right_poke = Poke(board.port_3, rising_event="right_poke", falling_event="right_poke_out")
-right_port = right_poke
 
 teensy_sync = Frame_logger(pin=board.port_4.DIO_C, rising_event="teensy_sync")
 
 hygrostat = Hygrostat(port=board.port_4, baudrate=115200)
+
+# convert reward amount (uL) to time (ms)
+# calibrated via solenoid_calibration.py
+reward_msPer5uL = [21, 21]
+
+# for compatibility
+left_port = left_poke
+right_port = right_poke
+center_port = center_poke
+final_valve = center_poke.SOL

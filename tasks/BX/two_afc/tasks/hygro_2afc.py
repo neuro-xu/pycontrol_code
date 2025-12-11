@@ -1,12 +1,6 @@
 import pyControl.utility as pc
 from pyb import UART
-from hardware_definition import right_poke, left_poke, center_poke, hygrostat, teensy_sync
-
-# Rwd sizing
-# For rwd durn multplier of 1, 1 mL ~ 125 rewards.
-# For rwd durn multiplier of 0.75, ~ 225 rewards.
-pc.v.reward_duration_multiplier = 0.75
-pc.v.n_allowed_rwds = 225  # total per session
+from hardware_definition import right_poke, left_poke, center_poke, hygrostat, teensy_sync, reward_msPer5uL
 
 # hygrostat
 pc.v.high_RH = 70
@@ -75,7 +69,15 @@ pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 
 # General Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
-pc.v.reward_durations = [47, 54]  # Reward delivery duration (ms) [left, right].
+# Rwd sizing
+# For rwd durn multplier of 1, 1 mL ~ 125 rewards.
+# For rwd durn multiplier of 0.75, ~ 225 rewards.
+pc.v.reward_duration_multiplier = 0.75
+pc.v.max_reward_vol = 1000 # 1 mL
+pc.v.unit_reward_vol = 5 # 5 uL
+pc.v.reward_durations = reward_msPer5uL / 5.0 * pc.v.unit_reward_vol  # Reward delivery duration (ms) [left, right].
+pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
+
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 

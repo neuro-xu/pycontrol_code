@@ -2,12 +2,13 @@
 
 from pyControl.utility import *
 from devices import *
+from hardware_definition import *
 
 # Instantiate Devices.
-board = Breakout_1_2()
-left_poke = Poke(board.port_3, rising_event="left_poke", falling_event="left_poke_out")
-center_poke = Poke(board.port_4, rising_event="center_poke", falling_event="center_poke_out")
-right_poke = Poke(board.port_2, rising_event="right_poke", falling_event="right_poke_out")
+# board = Breakout_1_2()
+# left_poke = Poke(board.port_3, rising_event="left_poke", falling_event="left_poke_out")
+# center_poke = Poke(board.port_4, rising_event="center_poke", falling_event="center_poke_out")
+# right_poke = Poke(board.port_2, rising_event="right_poke", falling_event="right_poke_out")
 
 # States and events.
 
@@ -31,7 +32,7 @@ events = [
 initial_state = "init_state"
 
 # Variables
-v.rwd_durations = [47, 54]  # Reward delivery duration (ms) [left, right].
+v.rwd_durations = [16, 16]  # Reward delivery duration (ms) [left, right].
 v.n_rwds_for_calibration = 200
 v.current_rwd = 0  # Current reward number
 

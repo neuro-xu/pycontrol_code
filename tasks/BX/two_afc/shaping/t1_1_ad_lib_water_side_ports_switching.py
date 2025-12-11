@@ -1,14 +1,15 @@
 import pyControl.utility as pc
 from devices import Breakout_1_2, Poke
+from hardware_definition import *
 
 # The goal of this step is to teach mice that reward can come from either side port.
 # TBD if we actually need it -- some mice may just be super biased towards one port or the other,
 # and this could help reduce that before trying to add in the center port as well.
 
 # Define hardware
-board = Breakout_1_2()
-right_port = Poke(board.port_2, rising_event="right_poke", falling_event="right_poke_out")
-left_port = Poke(board.port_3, rising_event="left_poke", falling_event="left_poke_out")
+# board = Breakout_1_2()
+# right_port = Poke(board.port_2, rising_event="right_poke", falling_event="right_poke_out")
+# left_port = Poke(board.port_3, rising_event="left_poke", falling_event="left_poke_out")
 
 # State machine
 states = ["wait_for_poke", "left_reward", "right_reward", "inter_trial_interval"]
@@ -20,12 +21,15 @@ initial_state = "wait_for_poke"
 
 # Parameters.
 pc.v.session_duration = 0.5 * pc.hour  # Session duration.
-pc.v.reward_durations = [47, 54]  # Reward delivery duration (ms) [left, right].
+pc.v.unit_reward_vol = 5
+pc.v.reward_durations = reward_msPer5uL / 5.0 * pc.v.unit_reward_vol  # Reward delivery duration (ms) [left, right].
 pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
 pc.v.n_allowed_rwds_per_block_mean = 20  # start this very high, like 20. Point is just to teach mice that reward can come from either side port.
 pc.v.n_allowed_rwds_per_block_max = 25
 pc.v.n_allowed_rwds_per_block_min = 15
-pc.v.n_allowed_rwds = 100
+pc.v.max_reward_vol = 1000 # 1mL
+pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / pc.v.unit_reward_vol)  # total per session
+
 
 # Variables.
 pc.v.rewarded_side = "left"  # initial; will be changed betw left and right
