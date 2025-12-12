@@ -135,12 +135,14 @@ def deliver_odor(event):
 def wait_for_side_poke(event):
     if event == "right_poke":
         if is_rewarded("right"):
+            pc.v.p_chose_right = (pc.v.p_chose_right * pc.v.n_rewards + 1.0) / (pc.v.n_rewards + 1.0)
             pc.goto_state("right_reward")
         else:
             pc.goto_state("timeout")
 
     elif event == "left_poke":
         if is_rewarded("left"):
+            pc.v.p_chose_right = (pc.v.p_chose_right * pc.v.n_rewards) / (pc.v.n_rewards + 1.0)
             pc.goto_state("left_reward")
         else:
             pc.goto_state("timeout")
