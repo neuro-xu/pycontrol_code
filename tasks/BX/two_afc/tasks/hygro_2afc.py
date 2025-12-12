@@ -75,7 +75,7 @@ pc.v.session_duration = 1 * pc.hour  # Session duration.
 pc.v.reward_duration_multiplier = 0.75
 pc.v.max_reward_vol = 1000 # 1 mL
 pc.v.unit_reward_vol = 5 # 5 uL
-pc.v.reward_durations = reward_msPer5uL / 5.0 * pc.v.unit_reward_vol  # Reward delivery duration (ms) [left, right].
+pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"

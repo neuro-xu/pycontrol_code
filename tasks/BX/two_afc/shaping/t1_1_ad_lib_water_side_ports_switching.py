@@ -1,6 +1,6 @@
 import pyControl.utility as pc
 from devices import Breakout_1_2, Poke
-from hardware_definition import *
+from hardware_definition import right_port, left_port, reward_msPer5uL
 
 # The goal of this step is to teach mice that reward can come from either side port.
 # TBD if we actually need it -- some mice may just be super biased towards one port or the other,
@@ -22,7 +22,7 @@ initial_state = "wait_for_poke"
 # Parameters.
 pc.v.session_duration = 0.5 * pc.hour  # Session duration.
 pc.v.unit_reward_vol = 5
-pc.v.reward_durations = reward_msPer5uL / 5.0 * pc.v.unit_reward_vol  # Reward delivery duration (ms) [left, right].
+pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
 pc.v.n_allowed_rwds_per_block_mean = 20  # start this very high, like 20. Point is just to teach mice that reward can come from either side port.
 pc.v.n_allowed_rwds_per_block_max = 25

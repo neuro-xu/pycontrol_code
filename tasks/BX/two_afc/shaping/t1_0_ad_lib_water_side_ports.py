@@ -12,13 +12,13 @@ initial_state = "wait_for_poke"
 # Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
 pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
-pc.v.reward_duration_multiplier = 0.75  # adjust per mouse; increase if not interested
+pc.v.reward_duration_multiplier = 1.0  # adjust per mouse; increase if not interested
 
 # Variables.
 pc.v.n_rewards = 0  # Number of rewards obtained.
-pc.v.max_reward_vol = 1000 # 1 mL
-pc.v.unit_reward_vol = 5 # 5 uL
-pc.v.reward_durations = reward_msPer5uL / 5.0 * pc.v.unit_reward_vol  # Reward delivery duration (ms) [left, right].
+pc.v.max_reward_vol = 1000 # uL
+pc.v.unit_reward_vol = 5 # uL
+pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 
 # These funcs are auto-run at beginning + end
