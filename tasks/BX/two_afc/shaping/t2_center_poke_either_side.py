@@ -6,13 +6,13 @@ from hardware_definition import right_port, left_port, center_port, final_valve,
 
 
 # State machine
-states = ["wait_for_center_poke", "deliver_odor", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
+states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
 events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_poke_out", "left_poke_out", "session_timer", "finish_ITI", "close_final_valve", "center_poke_held"]
 initial_state = "wait_for_center_poke"
 
-# Odor parameters
+# Air parameters
 pc.v.required_center_hold_duration = 225  # ms
-pc.v.odor_delivery_duration = 500
+pc.v.air_delivery_duration = 1000
 pc.v.final_valve_flush_duration = 500
 
 # General Parameters.
@@ -24,7 +24,7 @@ pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition t
 # use volume instead of duration
 # pc.v.n_allowed_rwds = 125  # total per session
 pc.v.max_reward_vol = 1000 # 1 mL
-pc.v.unit_reward_vol = 5 # 5 uL
+pc.v.unit_reward_vol = 15 # 5 uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 
@@ -37,8 +37,9 @@ pc.v.mov_ave_correct = 0  # moving avg of last 10 trials
 pc.v.choice = "right"
 pc.v.outcome = 0
 pc.v.n_correct_trials = 0
+pc.v.p_chose_right = 0 
 pc.v.n_rewards = 0  # total number of rewards obtained.
-pc.v.ave_correct_tracker = pc.OnlineMovingAverage(10)
+pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
  
 
 ### These funcs are auto-run at beginning + end ###
@@ -64,7 +65,7 @@ def is_rewarded(side):
     pc.v.outcome = 1
     pc.v.n_correct_trials += 1
     pc.v.n_rewards += 1  # one reward per trial in this task
-    pc.v.ave_correct_tracker.add(1)
+    pc.v.ave_correct_tracker.update(1)
     return pc.v.outcome
 
 
@@ -83,7 +84,7 @@ def all_states(event):
     if event == "session_timer":
         pc.stop_framework()
     elif event == "close_final_valve":
-        final_valve.off()
+        center_port.SOL.off()
 
 
 ### State-machine ###
@@ -118,15 +119,15 @@ def wait_for_center_poke(event):
     elif event == "center_poke_out":
         pc.disarm_timer("center_poke_held")
     elif event == "center_poke_held":
-        pc.goto_state("deliver_odor")
+        pc.goto_state("deliver_air")
 
 
 # Just air in this shaping task
-def deliver_odor(event):
+def deliver_air(event):
     if event == "entry":
         center_port.LED.off()
-        final_valve.on()
-        pc.timed_goto_state("wait_for_side_poke", pc.v.odor_delivery_duration)
+        center_port.SOL.on()
+        pc.timed_goto_state("wait_for_side_poke", pc.v.air_delivery_duration)
     elif event == "exit":
         pc.set_timer("close_final_valve", (pc.v.final_valve_flush_duration))
         disable_odor_valves()
@@ -168,7 +169,7 @@ def right_reward(event):
 
 def timeout(event):
     if event == "entry":
-        pc.v.ave_correct_tracker.add(0)
+        pc.v.ave_correct_tracker.update(0)
         pc.timed_goto_state("inter_trial_interval", pc.v.timeout_duration)
 
 
@@ -184,7 +185,7 @@ def inter_trial_interval(event):
         pc.v.entry_time = pc.get_current_time()
 
         # Update vars
-        pc.v.mov_ave_correct = pc.v.ave_correct_tracker.ave
+        pc.v.mov_ave_correct = pc.v.ave_correct_tracker.value
         pc.v.n_total_trials += 1
         pc.print_variables(["n_total_trials", "n_correct_trials", "mov_ave_correct", "required_center_hold_duration"])
         
