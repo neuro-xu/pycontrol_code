@@ -23,8 +23,8 @@ pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition t
 
 # use volume instead of duration
 # pc.v.n_allowed_rwds = 125  # total per session
-pc.v.max_reward_vol = 1000 # 1 mL
-pc.v.unit_reward_vol = 15 # 5 uL
+pc.v.max_reward_vol = 2000 # uL
+pc.v.unit_reward_vol = 5 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 

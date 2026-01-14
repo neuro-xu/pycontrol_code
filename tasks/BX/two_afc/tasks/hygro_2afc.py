@@ -5,7 +5,7 @@ from hardware_definition import right_poke, left_poke, center_poke, hygrostat, t
 # hygrostat
 pc.v.high_RH = 70
 pc.v.low_RH = 30
-pc.v.flow_rate = 1080 # mL/min
+pc.v.flow_rate = 1100 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # Left is high, right is low
@@ -27,17 +27,22 @@ def do_other_ITI_logic():
     pc.v.current_RH = pc.v.next_RH
     # check_update_rewarded_side()
 
+pc.v.n_rwd_per_block = 10 # this is approximate because we update next trial before knowing the outcome of the current trial
+pc.v.rwd_count_per_block = 0
 def check_update_rewarded_side():
-    
     # Block structure
-    # if pc.v.n_rewards_in_block >= pc.v.n_allowed_rwds_per_block:
-    #     pc.v.rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
-    #     get_n_rwds_allowed_in_block()
-    #     pc.v.n_rewards_in_block = 0
+    if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
+        pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+        pc.v.rwd_count_per_block = 0
+    else:
+        pc.v.next_rewarded_side = pc.v.rewarded_side
 
-    # Switch every trial
+    # Probabilistic
     # pc.v.rewarded_side = "left" if pc.withprob(0.5) else "right"
-    pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+
+    # Alternate
+    # pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+
     pc.publish_event("set_RH_for_trial")
     return
 
@@ -47,6 +52,7 @@ def is_rewarded(side):
         pc.v.n_correct_trials += 1
         pc.v.n_rewards += 1
         pc.v.outcome = 1
+        pc.v.rwd_count_per_block += 1 
     else:
         pc.v.outcome = 0
     pc.v.ave_correct_tracker.update(pc.v.outcome)
@@ -64,25 +70,25 @@ initial_state = "inter_trial_interval" # starts with ITI so we have time for hyg
 
 # Odor parameters
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
-pc.v.air_delivery_duration = 2000
+pc.v.air_delivery_duration = 1000
 pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 
 # General Parameters.
-pc.v.session_duration = 1 * pc.hour  # Session duration.
+pc.v.session_duration = 1.5 * pc.hour  # Session duration.
 # Rwd sizing
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
-pc.v.reward_duration_multiplier = 0.75
-pc.v.max_reward_vol = 1000 # 1 mL
-pc.v.unit_reward_vol = 5 # 5 uL
+pc.v.reward_duration_multiplier = 1
+pc.v.max_reward_vol = 2000 # mL
+pc.v.unit_reward_vol = 10 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
 pc.v.entry_time = 0
@@ -191,18 +197,31 @@ def wait_for_side_poke(event):
     if event == "entry":
         # pick the next trial's rewarded side as soon as we delivered air, so that we have enough time for hygrostat to get ready
         check_update_rewarded_side() 
+        # light up the correct side for shaping
+        # if pc.v.rewarded_side == "right":
+        #     right_poke.LED.on()
+        # else:
+        #     left_poke.LED.on()
+
     elif event == "right_poke":
+        # right_poke.LED.off()
+        # left_poke.LED.off()
         if is_rewarded("right"):
             pc.goto_state("right_reward")
         else:
             pc.goto_state("timeout")
 
     elif event == "left_poke":
+        # right_poke.LED.off()
+        # left_poke.LED.off()
         if is_rewarded("left"):
             pc.goto_state("left_reward")
         else:
             pc.goto_state("timeout")
 
+    # elif event == "exit":
+    #     right_poke.LED.off()
+    #     left_poke.LED.off()
 
 def left_reward(event):
     # Deliver reward to left poke.
