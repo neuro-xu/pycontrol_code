@@ -27,7 +27,7 @@ def do_other_ITI_logic():
     pc.v.current_RH = pc.v.next_RH
     # check_update_rewarded_side()
 
-pc.v.n_rwd_per_block = 10 # this is approximate because we update next trial before knowing the outcome of the current trial
+pc.v.n_rwd_per_block = 3 # this is approximate because we update next trial before knowing the outcome of the current trial
 pc.v.rwd_count_per_block = 0
 def check_update_rewarded_side():
     # Block structure
@@ -80,14 +80,14 @@ pc.v.session_duration = 1.5 * pc.hour  # Session duration.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
 pc.v.reward_duration_multiplier = 1
 pc.v.max_reward_vol = 2000 # mL
-pc.v.unit_reward_vol = 10 # uL
+pc.v.unit_reward_vol = 5 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
 pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
