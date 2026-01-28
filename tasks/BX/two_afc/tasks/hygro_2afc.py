@@ -27,21 +27,30 @@ def do_other_ITI_logic():
     pc.v.current_RH = pc.v.next_RH
     # check_update_rewarded_side()
 
-pc.v.n_rwd_per_block = 3 # this is approximate because we update next trial before knowing the outcome of the current trial
+pc.v.reward_structure = "prob"
+pc.v.n_rwd_per_block = 2 # this is approximate because we update next trial before knowing the outcome of the current trial
 pc.v.rwd_count_per_block = 0
+
 def check_update_rewarded_side():
     # Block structure
-    if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
-        pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
-        pc.v.rwd_count_per_block = 0
-    else:
-        pc.v.next_rewarded_side = pc.v.rewarded_side
+    if pc.v.reward_structure == "block":
+        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
+            pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+            pc.v.rwd_count_per_block = 0
+        else:
+            pc.v.next_rewarded_side = pc.v.rewarded_side
 
     # Probabilistic
-    # pc.v.rewarded_side = "left" if pc.withprob(0.5) else "right"
+    elif pc.v.reward_structure == "prob":
+        pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
 
     # Alternate
-    # pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+    elif pc.v.reward_structure == "alternate":
+        pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+    
+    # Catch
+    else:
+        pc.v.rewarded_side = "left" if pc.withprob(0.5) else "right"
 
     pc.publish_event("set_RH_for_trial")
     return
@@ -74,7 +83,7 @@ pc.v.air_delivery_duration = 1000
 pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 
 # General Parameters.
-pc.v.session_duration = 1.5 * pc.hour  # Session duration.
+pc.v.session_duration = 1.0 * pc.hour  # Session duration.
 # Rwd sizing
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.

@@ -16,7 +16,7 @@ hygrostat = Hygrostat(port=board.port_4, baudrate=115200)
 
 # convert reward amount (uL) to time (ms)
 # calibrated via solenoid_calibration.py
-reward_msPer5uL = [21, 21] 
+reward_msPer5uL = [25, 25] 
 
 # for compatibility
 left_port = left_poke
