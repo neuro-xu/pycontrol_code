@@ -27,15 +27,23 @@ def do_other_ITI_logic():
     pc.v.current_RH = pc.v.next_RH
     # check_update_rewarded_side()
 
-pc.v.reward_structure = "prob"
-pc.v.n_rwd_per_block = 2 # this is approximate because we update next trial before knowing the outcome of the current trial
+pc.v.reward_structure = "prob" # Options: prob, prob_block, alt, alt_block
+pc.v.n_rwd_per_block = 1 # this is approximate because we update next trial before knowing the outcome of the current trial
 pc.v.rwd_count_per_block = 0
 
 def check_update_rewarded_side():
-    # Block structure
-    if pc.v.reward_structure == "block":
+    # Alternate block structure
+    if pc.v.reward_structure == "alt_block":
         if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
             pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+            pc.v.rwd_count_per_block = 0
+        else:
+            pc.v.next_rewarded_side = pc.v.rewarded_side
+    
+    # Probabilistic block structure
+    if pc.v.reward_structure == "prob_block":
+        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
+            pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
             pc.v.rwd_count_per_block = 0
         else:
             pc.v.next_rewarded_side = pc.v.rewarded_side
@@ -45,12 +53,12 @@ def check_update_rewarded_side():
         pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
 
     # Alternate
-    elif pc.v.reward_structure == "alternate":
+    elif pc.v.reward_structure == "alt":
         pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
     
     # Catch
     else:
-        pc.v.rewarded_side = "left" if pc.withprob(0.5) else "right"
+        pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
 
     pc.publish_event("set_RH_for_trial")
     return
