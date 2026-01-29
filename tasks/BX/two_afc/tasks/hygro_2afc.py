@@ -23,24 +23,24 @@ def disable_odor_valves():
 ### Helper functions for rwds ###
 
 def do_other_ITI_logic():
+    check_update_rewarded_side() # moving it here to update next trial after choice
     pc.v.rewarded_side = pc.v.next_rewarded_side
     pc.v.current_RH = pc.v.next_RH
-    # check_update_rewarded_side()
 
-pc.v.reward_structure = "prob" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 1 # this is approximate because we update next trial before knowing the outcome of the current trial
+pc.v.reward_structure = "prob_block" # Options: prob, prob_block, alt, alt_block
+pc.v.n_rwd_per_block = 1
 pc.v.rwd_count_per_block = 0
 
 def check_update_rewarded_side():
-    # Alternate block structure
-    if pc.v.reward_structure == "alt_block":
+    # Alternate block structure (block contingent on correctness)
+    if pc.v.reward_structure == "alt_block": 
         if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
             pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
             pc.v.rwd_count_per_block = 0
         else:
             pc.v.next_rewarded_side = pc.v.rewarded_side
     
-    # Probabilistic block structure
+    # Probabilistic block structure (block contingent on correctness)
     if pc.v.reward_structure == "prob_block":
         if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
             pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
@@ -48,11 +48,11 @@ def check_update_rewarded_side():
         else:
             pc.v.next_rewarded_side = pc.v.rewarded_side
 
-    # Probabilistic
+    # Probabilistic (not contingent on correctness)
     elif pc.v.reward_structure == "prob":
         pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
 
-    # Alternate
+    # Alternate (not contingent on correctness)
     elif pc.v.reward_structure == "alt":
         pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
     
@@ -104,7 +104,7 @@ pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.rew
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.ITI_duration = 5.5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
 pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
@@ -212,8 +212,10 @@ def deliver_air(event):
 
 def wait_for_side_poke(event):
     if event == "entry":
-        # pick the next trial's rewarded side as soon as we delivered air, so that we have enough time for hygrostat to get ready
-        check_update_rewarded_side() 
+        # not saving much time this way...
+        # # pick the next trial's rewarded side as soon as we delivered air, so that we have enough time for hygrostat to get ready
+        # # check_update_rewarded_side() 
+        pass
         # light up the correct side for shaping
         # if pc.v.rewarded_side == "right":
         #     right_poke.LED.on()
