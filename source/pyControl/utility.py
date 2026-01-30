@@ -92,6 +92,31 @@ def get_current_time():
 
 #  Random functions and classes -----------------------------------------------
 
+class drawer:
+    # Class for drawing random numbers without replacement from 0 to n-1.
+    def __init__(self, elements, repetitions=None):
+        self.elements = list(elements)
+        
+        if repetitions is None:
+            repetitions = [1] * len(elements)
+
+        self.repetitions = list(repetitions)
+        
+        self.original = []
+        for elem, rep in zip(self.elements, self.repetitions):
+            self.original += [elem] * rep
+        
+        self._reset()
+
+    def _reset(self):
+        self.pool = shuffled(self.original.copy())
+
+    def draw(self):
+        if len(self.pool) == 0:
+            self._reset()
+        return self.pool.pop()
+        
+
 max_rand = 1 << 30  # Largest number output by pyb.rng()
 
 
