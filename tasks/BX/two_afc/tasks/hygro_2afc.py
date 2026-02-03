@@ -27,8 +27,8 @@ def do_other_ITI_logic():
     pc.v.rewarded_side = pc.v.next_rewarded_side
     pc.v.current_RH = pc.v.next_RH
 
-pc.v.reward_structure = "prob_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 1
+pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
+pc.v.n_rwd_per_block = 2
 pc.v.rwd_count_per_block = 0
 
 def check_update_rewarded_side():
@@ -56,9 +56,9 @@ def check_update_rewarded_side():
     elif pc.v.reward_structure == "alt":
         pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
     
-    # Catch
-    else:
-        pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
+    # # Catch
+    # else:
+    #     pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
 
     pc.publish_event("set_RH_for_trial")
     return

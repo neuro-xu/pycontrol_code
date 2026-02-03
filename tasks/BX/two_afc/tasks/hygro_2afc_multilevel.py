@@ -9,9 +9,9 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
 # Hygrostat params
-pc.v.RH_levels = [30, 40, 50, 60, 70]
-pc.v.RH_repetitions = [10, 2, 1, 2, 10]
-pc.v.RH_reference = 50  # neutral point, arbitrary
+pc.v.RH_levels = [25, 35, 40, 45, 55, 60, 65, 75]
+pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
+pc.v.RH_reference = 50  # reward reference, stick to 50%
 pc.v.high_side = "left"  # side associated with high RH
 pc.v.low_side = "right"  # side associated with low RH
 drawer = pc.drawer(pc.v.RH_levels, repetitions=pc.v.RH_repetitions)
