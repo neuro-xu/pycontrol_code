@@ -247,7 +247,7 @@ def inter_trial_interval(event):
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", 
-                                "choice", "outcome", "current_RH"])
+                                "choice", "outcome", "current_RH", "early_err_flag"])
 
         # Do any other required ITI logic in this function
         # do_other_ITI_logic()
