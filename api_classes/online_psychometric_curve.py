@@ -22,7 +22,7 @@ class online_psychometric_curve(Api):
 
         self.subject_ID = None
         self.file_path = None
-
+        
     # runs at the start of session
     def run_start(self):
         plt.ion()  # interactive mode so we can update without blocking
@@ -100,46 +100,50 @@ class online_psychometric_curve(Api):
         if len(self.x_vals) == 0:
             return
 
-        x = np.array(self.x_vals, dtype=float)
-        n = np.array(self.n_trials, dtype=float)
-        k_left = np.array(self.left_cnts, dtype=float)
+        try:
+            x = np.array(self.x_vals, dtype=float)
+            n = np.array(self.n_trials, dtype=float)
+            k_left = np.array(self.left_cnts, dtype=float)
 
-        p_left = k_left / n  # proportion of left choices
+            p_left = k_left / n  # proportion of left choices
 
-        # binomial standard error
-        se = np.sqrt(p_left * (1.0 - p_left) / n)
+            # binomial standard error
+            se = np.sqrt(p_left * (1.0 - p_left) / n)
 
-        self.ax.clear()
+            self.ax.clear()
 
-        # Keep black background each redraw
-        self.ax.set_facecolor('black')
-        self.fig.patch.set_facecolor('black')
+            # Keep black background each redraw
+            self.ax.set_facecolor('black')
+            self.fig.patch.set_facecolor('black')
 
-        # White ticks / labels / spines again (clearing resets them)
-        self.ax.tick_params(colors='white')
-        for spine in self.ax.spines.values():
-            spine.set_color('white')
+            # White ticks / labels / spines again (clearing resets them)
+            self.ax.tick_params(colors='white')
+            for spine in self.ax.spines.values():
+                spine.set_color('white')
 
-        self.ax.xaxis.label.set_color('white')
-        self.ax.yaxis.label.set_color('white')
-        self.ax.title.set_color('white')
+            self.ax.xaxis.label.set_color('white')
+            self.ax.yaxis.label.set_color('white')
+            self.ax.title.set_color('white')
 
-        # Connect dots: line + markers, white on black
-        self.ax.errorbar(
-            x, p_left, yerr=se,
-            fmt='-o',          # line + circle markers
-            color='C0',     # line + marker color
-            ecolor='C0',    # error bar color
-            capsize=0
-        )
+            # Connect dots: line + markers, white on black
+            self.ax.errorbar(
+                x, p_left, yerr=se,
+                fmt='-o',          # line + circle markers
+                color='C0',     # line + marker color
+                ecolor='C0',    # error bar color
+                capsize=0
+            )
 
-        self.ax.set_xlabel(self.x_var)
-        self.ax.set_ylabel('P(left choice)')
-        self.ax.set_ylim(-0.05, 1.05)
-        self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc})')
+            self.ax.set_xlabel(self.x_var)
+            self.ax.set_ylabel('P(left choice)')
+            self.ax.set_ylim(-0.05, 1.05)
+            self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc})')
 
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+        except Exception as e:
+            print("Error in plot_update():", repr(e))
 
     # this is called repeatedly during the session
     def process_data_user(self, data):
@@ -152,97 +156,101 @@ class online_psychometric_curve(Api):
             - early_err_flag == 0 (valid trial)
         Then we treat that as one completed trial and update the psychometric.
         """
-        if len(data['vars']) == 0:
-            return
+        try:
+            if len(data['vars']) == 0:
+                return
 
-        # make a simple dict: name -> value
-        vars_dict = {v.name: v.value for v in data['vars']}
+            # make a simple dict: name -> value
+            vars_dict = {v.name: v.value for v in data['vars']}
 
-        # ensure we have all needed variables
-        if (self.x_var not in vars_dict or
-                self.choice_var not in vars_dict or
-                self.err_var not in vars_dict):
-            return
+            # ensure we have all needed variables
+            if (self.x_var not in vars_dict or
+                    self.choice_var not in vars_dict or
+                    self.err_var not in vars_dict):
+                return
 
-        x_val  = vars_dict[self.x_var]
-        err    = vars_dict[self.err_var]
-        choice = vars_dict[self.choice_var]
-        self.acc = vars_dict['overall_ave_correct'] if 'overall_ave_correct' in vars_dict else None
+            x_val  = vars_dict[self.x_var]
+            err    = vars_dict[self.err_var]
+            choice = vars_dict[self.choice_var]
+            self.acc = vars_dict['overall_ave_correct'] if 'overall_ave_correct' in vars_dict else None
 
-        # skip invalid / early-error trials
-        if bool(err):
-            return
+            # skip invalid / early-error trials
+            if bool(err):
+                return
 
-        # make sure choice is defined
-        if choice is None:
-            return
+            # make sure choice is defined
+            if choice is None:
+                return
 
-        # Expecting string "left" or "right"
-        if choice not in ("left", "right"):
-            return
+            # Expecting string "left" or "right"
+            if choice not in ("left", "right"):
+                return
 
-        left_choice = (choice == "left")
+            left_choice = (choice == "left")
 
-        # Update internal counts and redraw psychometric
-        self._update_internal_counts(x_val, left_choice)
+            # Update internal counts and redraw psychometric
+            self._update_internal_counts(x_val, left_choice)
+
+        except Exception as e:
+            print("Error in process_data_user():", repr(e))
 
     def run_stop(self):
         # Optionally save the final figure and close it at end of session
         try:
             if hasattr(self, 'fig'):
-                # fit psychometric function
-                if self.n_trials > 2:
-                    # fitting
-                    data = np.column_stack((self.x_vals, self.left_cnts, self.n_trials))
-                    res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=True)
-
-                    # params
-                    PSE = res.threshold(0.5, unscaled=True)[0]
-                    JND = (res.threshold(0.75, unscaled=True)[0] - res.threshold(0.25, unscaled=True)[0]) / 2
-
-                    print(f"{session_name}, PSE: {PSE: 1.3f}, JND: {JND: 1.3f}, lapses: {res.parameter_estimate['gamma']:1.3f}, {res.parameter_estimate['lambda']:1.3f}, eta: {res.parameter_estimate['eta']:1.3e}")
-
-                    # dump results in a npz file
-                    if self.subject_ID is not None:
-                        np.savez(self.file_path.replace('.pdf', '.npz'),
-                                data=data,
-                                parameter_estimate=res.parameter_estimate,
-                                parameter_confidence_intervals=res.confidence_intervals,
-                                PSE=PSE,
-                                JND=JND)
-                    
-                    # clear figure
-                    self.ax.clear()
-
-                    # Keep black background each redraw
-                    self.ax.set_facecolor('black')
-                    self.fig.patch.set_facecolor('black')
-
-                    # White ticks / labels / spines again (clearing resets them)
-                    self.ax.tick_params(colors='white')
-                    for spine in self.ax.spines.values():
-                        spine.set_color('white')
-
-                    self.ax.xaxis.label.set_color('white')
-                    self.ax.yaxis.label.set_color('white')
-                    self.ax.title.set_color('white')
-
-                    # plot
-                    psp.plot_psychometric_function(res, line_color='w', data_color='C0', data_size=0.5, ax=self.ax, estimate_type='mean')
-
-                    self.ax.set_xlabel(self.x_var)
-                    self.ax.set_ylabel('P(left choice)')
-                    self.ax.set_ylim(-0.05, 1.05)
-                    self.ax.set_title(f'{self.title_str} \n(N = {n.sum():g}, accuracy {self.acc:1.2f}, JND {JND:1.1f}, PSE {PSE:1.1f})')
-
-                    self.fig.canvas.draw()
-                    self.fig.canvas.flush_events()
-
                 if self.subject_ID is not None:
+                    # fit psychometric function
+                    if sum(self.n_trials) > 5:
+                        # fitting
+                        data = np.column_stack((self.x_vals, self.left_cnts, self.n_trials))
+                        res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=True)
+
+                        # params
+                        PSE = res.threshold(0.5, unscaled=True)[0]
+                        JND = (res.threshold(0.75, unscaled=True)[0] - res.threshold(0.25, unscaled=True)[0]) / 2
+
+                        print(f"PSE: {PSE: 1.3f}, JND: {JND: 1.3f}, lapses: {res.parameter_estimate['gamma']:1.3f}, {res.parameter_estimate['lambda']:1.3f}, eta: {res.parameter_estimate['eta']:1.3e}")
+
+                        # dump results in a npz file
+                        if self.subject_ID is not None:
+                            np.savez(self.file_path.replace('.pdf', '.npz'),
+                                    data=data,
+                                    parameter_estimate=res.parameter_estimate,
+                                    parameter_confidence_intervals=res.confidence_intervals,
+                                    PSE=PSE,
+                                    JND=JND)
+                        
+                        # clear figure
+                        self.ax.clear()
+
+                        # Keep black background each redraw
+                        self.ax.set_facecolor('black')
+                        self.fig.patch.set_facecolor('black')
+
+                        # White ticks / labels / spines again (clearing resets them)
+                        self.ax.tick_params(colors='white')
+                        for spine in self.ax.spines.values():
+                            spine.set_color('white')
+
+                        self.ax.xaxis.label.set_color('white')
+                        self.ax.yaxis.label.set_color('white')
+                        self.ax.title.set_color('white')
+
+                        # plot
+                        psp.plot_psychometric_function(res, line_color='w', data_color='C0', ax=self.ax, estimate_type='mean')
+
+                        self.ax.set_xlabel(self.x_var)
+                        self.ax.set_ylabel('P(left choice)')
+                        self.ax.set_ylim(-0.05, 1.05)
+                        self.ax.set_title(f'{self.title_str} \n(N = {sum(self.n_trials):g}, accuracy {self.acc:1.2f}, JND {JND:1.1f}, PSE {PSE:1.1f})')
+
+                        self.fig.canvas.draw()
+                        self.fig.canvas.flush_events()
+
                     self.fig.savefig(self.file_path)
                 
-                plt.close(self.fig)
+                # plt.close(self.fig)
 
         except Exception as e:
-            print("Error in run_stop:", repr(e))
+            print("Error in online_psychometric_curve.run_stop():", repr(e))
 
