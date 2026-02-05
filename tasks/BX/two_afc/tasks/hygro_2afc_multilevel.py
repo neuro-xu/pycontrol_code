@@ -8,8 +8,9 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
+pc.v.api_class = 'online_psychometric_curve'
 # Hygrostat params
-pc.v.RH_levels = [25, 35, 40, 45, 55, 60, 65, 75]
+pc.v.RH_levels = [30, 35, 40, 45, 55, 60, 65, 70]
 pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
 pc.v.RH_reference = 50  # reward reference, stick to 50%
 pc.v.high_side = "left"  # side associated with high RH
@@ -45,7 +46,7 @@ pc.v.overall_ave_correct = 0  # excludes early errs
 pc.v.early_err_flag = False # to avoid redrawing RH levels on next trial if early error occurs
 
 # Reward variables (updated / used in "is_rewarded")
-pc.v.choice = "right"
+pc.v.choice = None
 pc.v.outcome = 0
 pc.v.n_correct_trials = 0
 pc.v.n_rewards = 0  # total number of rewards obtained.

@@ -15,28 +15,33 @@ from source.gui.api import Api
 class Example_user_class(Api):
     def __init__(self):
         self.off_count = 0
-
+        
     # this runs at the start of sessoin
     def run_start(self):
         self.print_to_log("\nYou can print directly to the log from user class")
 
     # use this function
     def process_data_user(self, data):
-        # check if state changed to LED_off
-        LED_off_happened = [state.name == "LED_off" for state in data["states"]]
-        if LED_off_happened:
-            self.off_count += 1
-            new_duration = random.triangular(0.1, 1, 5.5)
-            self.set_variable("LED_duration", round(new_duration, 3))
-            if self.off_count % 4 == 0:
-                self.trigger_event("event_a")
+        if len(data['vars']) > 0:
+            # data['vars'] is a list of named tuples
+            current_RH = [v for v in data['vars'] if v.name == 'current_RH']
+            
 
-        # check for print message from task
-        msgs_from_task = [printed.data.split("=")[1] for printed in data["prints"] if "vals_from_task=" in printed.data]
-        for msg in msgs_from_task:
-            x, y, z = msg.split(",")
-            total = int(x) + int(y) + int(z)
-            self.print_message("{} and {} and {} total to {}".format(x, y, z, total))
+        # # check if state changed to LED_off
+        # LED_off_happened = [state.name == "LED_off" for state in data["states"]]
+        # if LED_off_happened:
+        #     self.off_count += 1
+        #     new_duration = random.triangular(0.1, 1, 5.5)
+        #     self.set_variable("LED_duration", round(new_duration, 3))
+        #     if self.off_count % 4 == 0:
+        #         self.trigger_event("event_a")
+
+        # # check for print message from task
+        # msgs_from_task = [printed.data.split("=")[1] for printed in data["prints"] if "vals_from_task=" in printed.data]
+        # for msg in msgs_from_task:
+        #     x, y, z = msg.split(",")
+        #     total = int(x) + int(y) + int(z)
+        #     self.print_message("{} and {} and {} total to {}".format(x, y, z, total))
 
     def run_start(self):
         self.print_to_log("\nMessage from config/user_classes/Example_user_class.py at the start of the run")
