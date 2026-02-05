@@ -3,6 +3,8 @@ from source.gui.api import Api
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
+import psignifit as ps
+import psignifit.psigniplot as psp
 
 class online_psychometric_curve(Api):
     def __init__(self):
@@ -188,10 +190,59 @@ class online_psychometric_curve(Api):
         # Optionally save the final figure and close it at end of session
         try:
             if hasattr(self, 'fig'):
+                # fit psychometric function
+                if self.n_trials > 2:
+                    # fitting
+                    data = np.column_stack((self.x_vals, self.left_cnts, self.n_trials))
+                    res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=True)
+
+                    # params
+                    PSE = res.threshold(0.5, unscaled=True)[0]
+                    JND = (res.threshold(0.75, unscaled=True)[0] - res.threshold(0.25, unscaled=True)[0]) / 2
+
+                    print(f"{session_name}, PSE: {PSE: 1.3f}, JND: {JND: 1.3f}, lapses: {res.parameter_estimate['gamma']:1.3f}, {res.parameter_estimate['lambda']:1.3f}, eta: {res.parameter_estimate['eta']:1.3e}")
+
+                    # dump results in a npz file
+                    if self.subject_ID is not None:
+                        np.savez(self.file_path.replace('.pdf', '.npz'),
+                                data=data,
+                                parameter_estimate=res.parameter_estimate,
+                                parameter_confidence_intervals=res.confidence_intervals,
+                                PSE=PSE,
+                                JND=JND)
+                    
+                    # clear figure
+                    self.ax.clear()
+
+                    # Keep black background each redraw
+                    self.ax.set_facecolor('black')
+                    self.fig.patch.set_facecolor('black')
+
+                    # White ticks / labels / spines again (clearing resets them)
+                    self.ax.tick_params(colors='white')
+                    for spine in self.ax.spines.values():
+                        spine.set_color('white')
+
+                    self.ax.xaxis.label.set_color('white')
+                    self.ax.yaxis.label.set_color('white')
+                    self.ax.title.set_color('white')
+
+                    # plot
+                    psp.plot_psychometric_function(res, line_color='w', data_color='C0', data_size=0.5, ax=self.ax, estimate_type='mean')
+
+                    self.ax.set_xlabel(self.x_var)
+                    self.ax.set_ylabel('P(left choice)')
+                    self.ax.set_ylim(-0.05, 1.05)
+                    self.ax.set_title(f'{self.title_str} \n(N = {n.sum():g}, accuracy {self.acc:1.2f}, JND {JND:1.1f}, PSE {PSE:1.1f})')
+
+                    self.fig.canvas.draw()
+                    self.fig.canvas.flush_events()
+
                 if self.subject_ID is not None:
                     self.fig.savefig(self.file_path)
                 
                 plt.close(self.fig)
+
         except Exception as e:
             print("Error in run_stop:", repr(e))
 
