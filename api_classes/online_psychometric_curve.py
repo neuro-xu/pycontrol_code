@@ -18,6 +18,9 @@ class online_psychometric_curve(Api):
         self.left_cnts = []  # number of "left" choices at each stimulus
         self.n_trials  = []  # total valid trials at each stimulus
 
+        self.subject_ID = None
+        self.file_path = None
+
     # runs at the start of session
     def run_start(self):
         plt.ion()  # interactive mode so we can update without blocking
@@ -51,7 +54,12 @@ class online_psychometric_curve(Api):
         self.ax.set_ylabel('P(left choice)')
         self.ax.set_ylim(-0.05, 1.05)
 
-        self.title_str = self.board.data_logger.subject_ID if self.board.data_logger.subject_ID is not None else '' + \
+        self.subject_ID = self.board.data_logger.subject_ID
+        
+        if self.board.data_logger.file_path is not None:
+            self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')
+
+        self.title_str = (self.subject_ID if self.subject_ID is not None else '') + \
                             datetime.now().strftime(' %Y-%m-%d')
 
         self.ax.set_title(self.title_str)
@@ -180,9 +188,10 @@ class online_psychometric_curve(Api):
         # Optionally save the final figure and close it at end of session
         try:
             if hasattr(self, 'fig'):
-                if self.board.data_logger.subject_ID is not None:
-                    self.fig.savefig(self.board.data_logger.data_file.replace('.tsv', '_psychometric.pdf'))
+                if self.subject_ID is not None:
+                    self.fig.savefig(self.file_path)
                 
                 plt.close(self.fig)
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error in run_stop:", repr(e))
+
