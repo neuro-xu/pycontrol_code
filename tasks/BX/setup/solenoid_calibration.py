@@ -32,7 +32,7 @@ events = [
 initial_state = "init_state"
 
 # Variables
-v.rwd_durations = [16, 16]  # Reward delivery duration (ms) [left, right].
+v.rwd_durations = [25, 25]  # Reward delivery duration (ms) [left, right].
 v.n_rwds_for_calibration = 200
 v.current_rwd = 0  # Current reward number
 

@@ -10,20 +10,20 @@ initial_state = "inter_trial_interval" # starts with ITI so we have time for hyg
 
 pc.v.api_class = 'online_psychometric_curve'
 # Hygrostat params
-pc.v.RH_levels = [30, 35, 40, 45, 55, 60, 65, 70]
+pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
 pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
 pc.v.RH_reference = 50  # reward reference, stick to 50%
 pc.v.high_side = "left"  # side associated with high RH
 pc.v.low_side = "right"  # side associated with low RH
 drawer = pc.drawer(pc.v.RH_levels, repetitions=pc.v.RH_repetitions)
 
-pc.v.flow_rate = 1100 # mL/min
+pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.choice(drawer.original)  # start at random RH
 pc.v.next_RH = pc.v.current_RH
 
 # Timing params
 pc.v.session_duration = 1.0 * pc.hour  # Session duration.
-pc.v.ITI_duration = 5.5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
 pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.

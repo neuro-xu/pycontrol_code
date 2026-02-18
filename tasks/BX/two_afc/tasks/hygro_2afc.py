@@ -5,7 +5,7 @@ from hardware_definition import right_poke, left_poke, center_poke, hygrostat, t
 # hygrostat
 pc.v.high_RH = 70
 pc.v.low_RH = 30
-pc.v.flow_rate = 1100 # mL/min
+pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # Left is high, right is low
@@ -28,7 +28,7 @@ def do_other_ITI_logic():
     pc.v.current_RH = pc.v.next_RH
 
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 2
+pc.v.n_rwd_per_block = 10
 pc.v.rwd_count_per_block = 0
 
 def check_update_rewarded_side():
@@ -104,7 +104,7 @@ pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.rew
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 5.5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
 pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
