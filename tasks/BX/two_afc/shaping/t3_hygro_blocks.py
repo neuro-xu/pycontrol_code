@@ -13,7 +13,7 @@ def get_sides_from_subject_id():
         idx = int(pc.v.subject_id[-1]) % 2 == 1
         pc.v.high_side = "left" if idx else "right"
         pc.v.low_side = "right" if idx else "left"
-    else
+    else:
         pc.v.high_side = "left"  # side associated with high RH
         pc.v.low_side = "right"  # side associated with low RH
 
@@ -138,6 +138,7 @@ pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
 ### These funcs are auto-run at beginning + end ###
 def run_start():
+    get_sides_from_subject_id()
     # Set session timer and turn on houslight.
     pc.set_timer("session_timer", pc.v.session_duration)
     hygrostat.begin()

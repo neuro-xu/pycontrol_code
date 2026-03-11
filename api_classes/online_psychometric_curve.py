@@ -13,11 +13,12 @@ class online_psychometric_curve(Api):
         # Names of task variables coming from the board
         self.x_var      = 'current_RH'      # stimulus value / RH
         self.choice_var = 'choice'          # "left" / "right" / None
-        self.err_var    = 'early_err_flag'  # flag for early/invalid trials
+        self.err_var    = 'early_err_flag'  # flag for early/invalid trials\
+        self.moist_side = 'left'            # correct side for moist
 
         # Containers for online psychometric data
         self.x_vals    = []  # unique stimulus values
-        self.left_cnts = []  # number of "left" choices at each stimulus
+        self.x_cnts = []  # number of "moist" choices at each stimulus
         self.n_trials  = []  # total valid trials at each stimulus
 
         self.subject_ID = None
@@ -47,16 +48,21 @@ class online_psychometric_curve(Api):
         except Exception:
             pass
 
-        self.x_vals    = []
-        self.left_cnts = []
+        self.x_vals = []
+        self.x_cnts = []
         self.n_trials  = []
         self.acc = 0
 
         self.ax.set_xlabel(self.x_var)
-        self.ax.set_ylabel('P(left choice)')
+        self.ax.set_ylabel('P(moist choice)')
         self.ax.set_ylim(-0.05, 1.05)
 
         self.subject_ID = self.board.data_logger.subject_ID
+
+        # update moist side based on subject ID
+        if len(self.subject_ID) > 0:
+            self.moist_side = 'left' if int(self.subject_ID[-1]) % 2 == 1 else 'right'
+            # print(f'moist side {self.moist_side}')
         
         if self.board.data_logger.file_path is not None:
             self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')
@@ -70,28 +76,28 @@ class online_psychometric_curve(Api):
         self.fig.canvas.flush_events()
         plt.show(block=False)
 
-    def _update_internal_counts(self, x_val, left_choice):
+    def _update_internal_counts(self, x_val, moist_choice):
         """
         Update the running counts for a single completed, valid trial.
         x_val       : stimulus value
-        left_choice : boolean, True if trial was a "left" choice
+        moist_choice : boolean, True if trial was a "moist" choice
         """
         if x_val in self.x_vals:
             idx = self.x_vals.index(x_val)
             self.n_trials[idx] += 1
-            if left_choice:
-                self.left_cnts[idx] += 1
+            if moist_choice:
+                self.x_cnts[idx] += 1
         else:
             # new stimulus level
             self.x_vals.append(x_val)
             self.n_trials.append(1)
-            self.left_cnts.append(1 if left_choice else 0)
+            self.x_cnts.append(1 if moist_choice else 0)
 
             # keep x_vals sorted (and keep counts aligned)
             order = np.argsort(self.x_vals)
             self.x_vals    = list(np.array(self.x_vals)[order])
             self.n_trials  = list(np.array(self.n_trials)[order])
-            self.left_cnts = list(np.array(self.left_cnts)[order])
+            self.x_cnts = list(np.array(self.x_cnts)[order])
 
     def plot_update(self):
         """
@@ -103,7 +109,7 @@ class online_psychometric_curve(Api):
         try:
             x = np.array(self.x_vals, dtype=float)
             n = np.array(self.n_trials, dtype=float)
-            k_left = np.array(self.left_cnts, dtype=float)
+            k_left = np.array(self.x_cnts, dtype=float)
 
             p_left = k_left / n  # proportion of left choices
 
@@ -135,9 +141,9 @@ class online_psychometric_curve(Api):
             )
 
             self.ax.set_xlabel(self.x_var)
-            self.ax.set_ylabel('P(left choice)')
+            self.ax.set_ylabel('P(moist choice)')
             self.ax.set_ylim(-0.05, 1.05)
-            self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc})')
+            self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc: 1.3f})')
 
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
@@ -186,10 +192,10 @@ class online_psychometric_curve(Api):
             if choice not in ("left", "right"):
                 return
 
-            left_choice = (choice == "left")
+            moist_choice = (choice == self.moist_side)
 
             # Update internal counts and redraw psychometric
-            self._update_internal_counts(x_val, left_choice)
+            self._update_internal_counts(x_val, moist_choice)
 
         except Exception as e:
             print("Error in process_data_user():", repr(e))
@@ -202,7 +208,7 @@ class online_psychometric_curve(Api):
                     # fit psychometric function
                     if sum(self.n_trials) > 5:
                         # fitting
-                        data = np.column_stack((self.x_vals, self.left_cnts, self.n_trials))
+                        data = np.column_stack((self.x_vals, self.x_cnts, self.n_trials))
                         res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=True)
 
                         # params
@@ -240,7 +246,7 @@ class online_psychometric_curve(Api):
                         psp.plot_psychometric_function(res, line_color='w', data_color='C0', ax=self.ax, estimate_type='mean')
 
                         self.ax.set_xlabel(self.x_var)
-                        self.ax.set_ylabel('P(left choice)')
+                        self.ax.set_ylabel('P(moist choice)')
                         self.ax.set_ylim(-0.05, 1.05)
                         self.ax.set_title(f'{self.title_str} \n(N = {sum(self.n_trials):g}, accuracy {self.acc:1.2f}, JND {JND:1.1f}, PSE {PSE:1.1f})')
 

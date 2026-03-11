@@ -11,7 +11,7 @@ initial_state = "inter_trial_interval" # starts with ITI so we have time for hyg
 pc.v.api_class = 'online_psychometric_curve'
 pc.v.subject_id = '' # place holder, will be set from setup_task()
 pc.v.high_side = "left"
-pc.v.high_side = "right"
+pc.v.low_side = "right"
 
 # Hygrostat params
 pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
@@ -24,7 +24,7 @@ def get_sides_from_subject_id():
         idx = int(pc.v.subject_id[-1]) % 2 == 1
         pc.v.high_side = "left" if idx else "right"
         pc.v.low_side = "right" if idx else "left"
-    else
+    else:
         pc.v.high_side = "left"  # side associated with high RH
         pc.v.low_side = "right"  # side associated with low RH
 

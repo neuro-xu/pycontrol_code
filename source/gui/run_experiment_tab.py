@@ -390,7 +390,7 @@ class Subjectbox(QtWidgets.QGroupBox):
             self.initialise_API()
 
             # send subject id to board
-            if "subject_id" in self.board.sm_info.variables:
+            if "subject_id" in self.board.sm_info.variables.keys():
                 try:
                     self.board.set_variable('subject_id', self.subject)
                 except PyboardError as e:

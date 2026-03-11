@@ -455,7 +455,7 @@ class Run_task_tab(QtWidgets.QWidget):
             setup_ID = self.board_select.currentText()
 
             # send subject id to task file
-            if "subject_id" in self.board.sm_info.variables:
+            if "subject_id" in self.board.sm_info.variables.keys():
                 try:
                     self.board.set_variable('subject_id', subject_ID)
                 except PyboardError as e:
