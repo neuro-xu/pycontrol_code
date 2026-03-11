@@ -453,6 +453,14 @@ class Run_task_tab(QtWidgets.QWidget):
                     return
             subject_ID = self.subject_text.text()
             setup_ID = self.board_select.currentText()
+
+            # send subject id to task file
+            if "subject_id" in self.board.sm_info.variables:
+                try:
+                    self.board.set_variable('subject_id', subject_ID)
+                except PyboardError as e:
+                    self.print_to_log(f"\nError sending subject ID: {e}")
+
             self.board.data_logger.open_data_file(self.data_dir, "run_task", setup_ID, subject_ID)
             self.board.data_logger.copy_task_file(self.data_dir, self.GUI_main.task_directory, "run_task-task_files")
         self.fresh_task = False

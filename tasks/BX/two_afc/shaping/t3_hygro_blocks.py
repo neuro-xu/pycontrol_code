@@ -8,12 +8,26 @@ pc.v.low_RH = 30
 pc.v.flow_rate = 1050 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
+def get_sides_from_subject_id():
+    if len(pc.v.subject_id) > 0:
+        idx = int(pc.v.subject_id[-1]) % 2 == 1
+        pc.v.high_side = "left" if idx else "right"
+        pc.v.low_side = "right" if idx else "left"
+    else
+        pc.v.high_side = "left"  # side associated with high RH
+        pc.v.low_side = "right"  # side associated with low RH
+
+pc.v.subject_id = ''
+pc.v.high_side = "left"
+pc.v.low_side = "right"
+
 # Left is high, right is low
 def set_RH():
-    if pc.v.next_rewarded_side == "left":
-        pc.v.next_RH = pc.v.high_RH
-    elif pc.v.next_rewarded_side == "right":
-        pc.v.next_RH = pc.v.low_RH
+    pc.v.next_RH = pc.v.high_RH if pc.v.next_rewarded_side == pc.v.high_side else pc.v.low_RH
+    # if pc.v.next_rewarded_side == "left":
+    #     pc.v.next_RH = pc.v.high_RH
+    # elif pc.v.next_rewarded_side == "right":
+        # pc.v.next_RH = pc.v.low_RH
     hygrostat.set_humidity(pc.v.next_RH)
 
 # We don't need this for hygrostat stuff..

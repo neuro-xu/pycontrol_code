@@ -9,12 +9,25 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
 pc.v.api_class = 'online_psychometric_curve'
+pc.v.subject_id = '' # place holder, will be set from setup_task()
+pc.v.high_side = "left"
+pc.v.high_side = "right"
+
 # Hygrostat params
 pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
 pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
 pc.v.RH_reference = 50  # reward reference, stick to 50%
-pc.v.high_side = "left"  # side associated with high RH
-pc.v.low_side = "right"  # side associated with low RH
+
+# Choosing high/low sides based on last digit of subject ID
+def get_sides_from_subject_id():
+    if len(pc.v.subject_id) > 0:
+        idx = int(pc.v.subject_id[-1]) % 2 == 1
+        pc.v.high_side = "left" if idx else "right"
+        pc.v.low_side = "right" if idx else "left"
+    else
+        pc.v.high_side = "left"  # side associated with high RH
+        pc.v.low_side = "right"  # side associated with low RH
+
 drawer = pc.drawer(pc.v.RH_levels, repetitions=pc.v.RH_repetitions)
 
 pc.v.flow_rate = 1030 # mL/min
@@ -52,19 +65,19 @@ pc.v.n_correct_trials = 0
 pc.v.n_rewards = 0  # total number of rewards obtained.
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
-# Determine initial rewarded side
-if pc.v.current_RH > pc.v.RH_reference:
-    pc.v.rewarded_side = pc.v.high_side
-elif pc.v.current_RH < pc.v.RH_reference:
-    pc.v.rewarded_side = pc.v.low_side
-else:
-    pc.v.rewarded_side = pc.choice(["left", "right"])
+# # Determine initial rewarded side
+# if pc.v.current_RH > pc.v.RH_reference:
+#     pc.v.rewarded_side = pc.v.high_side
+# elif pc.v.current_RH < pc.v.RH_reference:
+#     pc.v.rewarded_side = pc.v.low_side
+# else:
+#     pc.v.rewarded_side = pc.choice(["left", "right"])
     
-pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
+# pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
 ### Helper functions  ###
-def set_RH():
-    hygrostat.set_humidity(pc.v.next_RH)
+# def set_RH():
+    # hygrostat.set_humidity(pc.v.next_RH)
 
 # # We don't need this for hygrostat stuff..
 # def disable_odor_valves():
@@ -103,10 +116,13 @@ def is_rewarded(side):
 ### These funcs are auto-run at beginning + end ###
 def run_start():
     # Set session timer and turn on houslight.
+    get_sides_from_subject_id()
+
     pc.set_timer("session_timer", pc.v.session_duration)
     hygrostat.begin()
     hygrostat.set_flowrate(pc.v.flow_rate)
-    set_RH() # this gets hygrostat ready for the first trial
+    # set_RH() # this gets hygrostat ready for the first trial
+    hygrostat.set_humidity(pc.v.next_RH)
 
 def run_end():
     # Turn off all hardware outputs.
@@ -136,7 +152,8 @@ def all_states(event):
     # so that the next trial's odor doesn't accidentally leak out.
     elif event == "set_RH_for_trial":
         if pc.timer_remaining("close_final_valve_done") == 0:
-            set_RH()
+            # set_RH()
+            hygrostat.set_humidity(pc.v.next_RH)
         else:
             pc.set_timer("set_RH_for_trial", 100)
 

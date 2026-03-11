@@ -388,6 +388,14 @@ class Subjectbox(QtWidgets.QGroupBox):
         try:
             self.board.setup_state_machine(self.run_exp_tab.experiment.task)
             self.initialise_API()
+
+            # send subject id to board
+            if "subject_id" in self.board.sm_info.variables:
+                try:
+                    self.board.set_variable('subject_id', self.subject)
+                except PyboardError as e:
+                    self.print_to_log(f"\nError sending subject ID: {e}")
+
         except PyboardError:
             self.setup_failed = True
             self.error()
