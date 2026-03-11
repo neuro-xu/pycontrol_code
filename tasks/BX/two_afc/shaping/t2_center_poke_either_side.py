@@ -17,7 +17,7 @@ pc.v.final_valve_flush_duration = 500
 
 # General Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
-pc.v.reward_duration_multiplier = 1.5
+pc.v.reward_duration_multiplier = 1.2
 pc.v.ITI_duration = 3 * pc.second  # Inter trial interval duration.
 pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
