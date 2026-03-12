@@ -28,10 +28,10 @@ def get_sides_from_subject_id():
         pc.v.high_side = "left"  # side associated with high RH
         pc.v.low_side = "right"  # side associated with low RH
 
-drawer = pc.drawer(pc.v.RH_levels, repetitions=pc.v.RH_repetitions)
+drawer = pc.drawer(repetitions=pc.v.RH_repetitions, humidity=pc.v.RH_levels)
 
 pc.v.flow_rate = 1030 # mL/min
-pc.v.current_RH = pc.choice(drawer.original)  # start at random RH
+pc.v.current_RH = pc.choice(drawer.original)['humidity']  # start at random RH
 pc.v.next_RH = pc.v.current_RH
 
 # Timing params
@@ -90,7 +90,7 @@ pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 #     pc.v.current_RH = pc.v.next_RH
 
 def check_update_rewarded_side():
-    pc.v.next_RH = drawer.draw()
+    pc.v.next_RH = drawer.draw()['humidity']
 
     if pc.v.next_RH > pc.v.RH_reference:
         pc.v.next_rewarded_side = pc.v.high_side
