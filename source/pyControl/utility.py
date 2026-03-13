@@ -92,31 +92,112 @@ def get_current_time():
 
 #  Random functions and classes -----------------------------------------------
 
-class drawer:
-    # Class for drawing random numbers without replacement from 0 to n-1.
-    def __init__(self, elements, repetitions=None):
-        self.elements = list(elements)
+# class drawer:
+#     # Class for drawing random numbers without replacement from 0 to n-1.
+#     def __init__(self, elements, repetitions=None):
+#         self.elements = list(elements)
         
-        if repetitions is None:
-            repetitions = [1] * len(elements)
+#         if repetitions is None:
+#             repetitions = [1] * len(elements)
 
-        self.repetitions = list(repetitions)
+#         self.repetitions = list(repetitions)
         
+#         self.original = []
+#         for elem, rep in zip(self.elements, self.repetitions):
+#             self.original += [elem] * rep
+        
+#         self._reset()
+
+#     def _reset(self):
+#         self.pool = shuffled(self.original.copy())
+
+#     def draw(self):
+#         if len(self.pool) == 0:
+#             self._reset()
+#         return self.pool.pop()
+        
+import random
+
+class drawer:
+    """
+    Pyboard-friendly drawer for combinations of factors with repetitions.
+    Example:
+        d = drawer(
+            repetitions=[[5,5],[8,8],[4,2]],
+            temperature=[20, 25, 30],
+            humidity=[30, 70]
+        )
+    """
+    def __init__(self, repetitions=None, **factors):
+        if not factors:
+            raise ValueError("At least one factor must be provided")
+
+        # Preserve factor order (MicroPython 1.12+ usually keeps insertion order)
+        self.factor_names = list(factors.keys())
+        self.factor_levels = [list(factors[name]) for name in self.factor_names]
+
+        # Build combinations without itertools.product
+        self.combinations = self._build_combinations(self.factor_names, self.factor_levels)
+
+        flat_reps = self._process_repetitions(repetitions)
+        if len(flat_reps) != len(self.combinations):
+            raise ValueError("repetitions length does not match number of combinations")
+
+        self.repetitions = flat_reps
+
+        # Build original pool (may be RAM-heavy if reps are large)
         self.original = []
-        for elem, rep in zip(self.elements, self.repetitions):
-            self.original += [elem] * rep
-        
+        for combo, rep in zip(self.combinations, self.repetitions):
+            for _ in range(rep):
+                self.original.append(combo)
+
         self._reset()
+
+    def _build_combinations(self, names, levels):
+        # Iterative Cartesian product to avoid recursion & itertools
+        combos = [ {} ]
+        for i in range(len(names)):
+            name = names[i]
+            new_combos = []
+            for base in combos:
+                for val in levels[i]:
+                    # Shallow copy + one new key
+                    c = base.copy()
+                    c[name] = val
+                    new_combos.append(c)
+            combos = new_combos
+        return combos
+
+    def _process_repetitions(self, repetitions):
+        if repetitions is None:
+            return [1] * len(self.combinations)
+
+        # Flat list
+        if (isinstance(repetitions, (list, tuple))
+                and repetitions
+                and not isinstance(repetitions[0], (list, tuple))):
+            return list(repetitions)
+
+        # Nested list/tuple: flatten
+        flat = []
+        def _flatten(x):
+            for elem in x:
+                if isinstance(elem, (list, tuple)):
+                    _flatten(elem)
+                else:
+                    flat.append(int(elem))  # ensure int
+        
+        _flatten(repetitions)
+        return flat
 
     def _reset(self):
         self.pool = shuffled(self.original.copy())
 
     def draw(self):
-        if len(self.pool) == 0:
+        if not self.pool:
             self._reset()
         return self.pool.pop()
-        
-
+    
 max_rand = 1 << 30  # Largest number output by pyb.rng()
 
 
