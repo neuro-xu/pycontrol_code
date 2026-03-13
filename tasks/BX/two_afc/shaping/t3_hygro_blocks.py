@@ -1,97 +1,6 @@
 import pyControl.utility as pc
 from pyb import UART
-from hardware_definition import right_poke, left_poke, center_poke, hygrostat, teensy_sync, reward_msPer5uL
-
-# hygrostat
-pc.v.high_RH = 70
-pc.v.low_RH = 30
-pc.v.flow_rate = 1050 # mL/min
-pc.v.current_RH = pc.v.low_RH
-
-def get_sides_from_subject_id():
-    if len(pc.v.subject_id) > 0:
-        idx = int(pc.v.subject_id[-1]) % 2 == 1
-        pc.v.high_side = "left" if idx else "right"
-        pc.v.low_side = "right" if idx else "left"
-    else:
-        pc.v.high_side = "left"  # side associated with high RH
-        pc.v.low_side = "right"  # side associated with low RH
-
-pc.v.subject_id = ''
-pc.v.high_side = "left"
-pc.v.low_side = "right"
-
-# Left is high, right is low
-def set_RH():
-    pc.v.next_RH = pc.v.high_RH if pc.v.next_rewarded_side == pc.v.high_side else pc.v.low_RH
-    # if pc.v.next_rewarded_side == "left":
-    #     pc.v.next_RH = pc.v.high_RH
-    # elif pc.v.next_rewarded_side == "right":
-        # pc.v.next_RH = pc.v.low_RH
-    hygrostat.set_humidity(pc.v.next_RH)
-
-# We don't need this for hygrostat stuff..
-def disable_odor_valves():
-    pass
-
-### Helper functions for rwds ###
-
-def do_other_ITI_logic():
-    check_update_rewarded_side() # moving it here to update next trial after choice
-    pc.v.rewarded_side = pc.v.next_rewarded_side
-    pc.v.current_RH = pc.v.next_RH
-
-pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 3
-pc.v.rwd_count_per_block = 0
-
-def check_update_rewarded_side():
-    # Alternate block structure (block contingent on correctness)
-    if pc.v.reward_structure == "alt_block": 
-        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
-            pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
-            pc.v.rwd_count_per_block = 0
-        else:
-            pc.v.next_rewarded_side = pc.v.rewarded_side
-    
-    # Probabilistic block structure (block contingent on correctness)
-    if pc.v.reward_structure == "prob_block":
-        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
-            pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
-            pc.v.rwd_count_per_block = 0
-        else:
-            pc.v.next_rewarded_side = pc.v.rewarded_side
-
-    # Probabilistic (not contingent on correctness)
-    elif pc.v.reward_structure == "prob":
-        pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
-
-    # Alternate (not contingent on correctness)
-    elif pc.v.reward_structure == "alt":
-        pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
-    
-    # # Catch
-    # else:
-    #     pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
-
-    pc.publish_event("set_RH_for_trial")
-    return
-
-def is_rewarded(side):
-    pc.v.choice = side
-    if side == pc.v.rewarded_side:
-        pc.v.n_correct_trials += 1
-        pc.v.n_rewards += 1
-        pc.v.outcome = 1
-        pc.v.rwd_count_per_block += 1 
-    else:
-        pc.v.outcome = 0
-    pc.v.ave_correct_tracker.update(pc.v.outcome)
-    return pc.v.outcome
-
-############
-# All code below here is direct c/p from task 2, save for a few small changes (ie printing more vars)
-############
+from hardware_definition import right_poke, left_poke, center_poke, hygrostat, reward_msPer5uL
 
 # State machine
 states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
@@ -99,7 +8,7 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
-# Odor parameters
+# Stimulus parameters
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
 pc.v.air_delivery_duration = 1000
 pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
@@ -134,7 +43,88 @@ pc.v.outcome = 0
 pc.v.n_correct_trials = 0
 pc.v.n_rewards = 0  # total number of rewards obtained.
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
- 
+
+# hygrostat
+pc.v.high_RH = 70
+pc.v.low_RH = 30
+pc.v.flow_rate = 1050 # mL/min
+pc.v.current_RH = pc.v.low_RH
+
+# reward structure
+pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
+pc.v.n_rwd_per_block = 3
+pc.v.rwd_count_per_block = 0
+
+pc.v.subject_id = ''
+pc.v.high_side = "left"
+pc.v.low_side = "right"
+
+# helpers
+def get_sides_from_subject_id():
+    if len(pc.v.subject_id) > 0:
+        idx = int(pc.v.subject_id[-1]) % 2 == 1
+        pc.v.high_side = "left" if idx else "right"
+        pc.v.low_side = "right" if idx else "left"
+    else:
+        pc.v.high_side = "left"  # side associated with high RH
+        pc.v.low_side = "right"  # side associated with low RH
+
+# Left is high, right is low
+def set_RH():
+    hygrostat.set_humidity(pc.v.next_RH)
+
+# We don't need this for hygrostat stuff..
+def disable_odor_valves():
+    pass
+
+def do_other_ITI_logic():
+    check_update_rewarded_side() # moving it here to update next trial after choice
+    pc.v.rewarded_side = pc.v.next_rewarded_side
+    pc.v.current_RH = pc.v.next_RH
+
+def check_update_rewarded_side():
+    # Alternate block structure (block contingent on correctness)
+    if pc.v.reward_structure == "alt_block": 
+        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
+            pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+            pc.v.rwd_count_per_block = 0
+        else:
+            pc.v.next_rewarded_side = pc.v.rewarded_side
+    
+    # Probabilistic block structure (block contingent on correctness)
+    elif pc.v.reward_structure == "prob_block":
+        if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
+            pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
+            pc.v.rwd_count_per_block = 0
+        else:
+            pc.v.next_rewarded_side = pc.v.rewarded_side
+
+    # Probabilistic (not contingent on correctness)
+    elif pc.v.reward_structure == "prob":
+        pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
+
+    # Alternate (not contingent on correctness)
+    elif pc.v.reward_structure == "alt":
+        pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+    
+    # # Catch
+    # else:
+    #     pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
+    pc.v.next_RH = pc.v.high_RH if pc.v.next_rewarded_side == pc.v.high_side else pc.v.low_RH
+    pc.publish_event("set_RH_for_trial")
+    return
+
+def is_rewarded(side):
+    pc.v.choice = side
+    if side == pc.v.rewarded_side:
+        pc.v.n_correct_trials += 1
+        pc.v.n_rewards += 1
+        pc.v.outcome = 1
+        pc.v.rwd_count_per_block += 1 
+    else:
+        pc.v.outcome = 0
+    pc.v.ave_correct_tracker.update(pc.v.outcome)
+    return pc.v.outcome
 
 ### These funcs are auto-run at beginning + end ###
 def run_start():
@@ -143,7 +133,7 @@ def run_start():
     pc.set_timer("session_timer", pc.v.session_duration)
     hygrostat.begin()
     hygrostat.set_flowrate(pc.v.flow_rate)
-    set_RH() # this gets hygrostat ready for the first trial
+    # set_RH() # this gets hygrostat ready for the first trial
 
 def run_end():
     # Turn off all hardware outputs.
@@ -155,7 +145,6 @@ def run_end():
 
     # Do whatever else...save data maybe?
     pass
-
 
 # State-independent behaviour.
 def all_states(event):
