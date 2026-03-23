@@ -21,7 +21,7 @@ pc.v.RH_reference = 50  # reward reference, stick to 50%
 # Choosing high/low sides based on last digit of subject ID
 def get_sides_from_subject_id():
     if len(pc.v.subject_id) > 0:
-        idx = int(pc.v.subject_id[-1]) % 2 == 1
+        idx = int(pc.v.subject_id.split("_")[0][-1]) % 2 == 1
         pc.v.high_side = "left" if idx else "right"
         pc.v.low_side = "right" if idx else "left"
     else:

@@ -1,6 +1,5 @@
 import pyControl.utility as pc
 from pyb import UART
-from hardware_definition import right_poke, left_poke, center_poke, hygrostat, reward_msPer5uL
 
 # State machine
 states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
@@ -52,7 +51,7 @@ pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 3
+pc.v.n_rwd_per_block = 2
 pc.v.rwd_count_per_block = 0
 
 pc.v.subject_id = ''
