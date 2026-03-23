@@ -171,6 +171,8 @@ class drawer:
     def _process_repetitions(self, repetitions):
         if repetitions is None:
             return [1] * len(self.combinations)
+        if type(repetitions) is int:
+            return [repetitions] * len(self.combinations)
 
         # Flat list
         if (isinstance(repetitions, (list, tuple))

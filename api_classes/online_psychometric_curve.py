@@ -13,7 +13,7 @@ class online_psychometric_curve(Api):
         # Names of task variables coming from the board
         self.x_var      = 'current_RH'      # stimulus value / RH
         self.choice_var = 'choice'          # "left" / "right" / None
-        self.err_var    = 'early_err_flag'  # flag for early/invalid trials\
+        self.err_var    = 'early_err_flag'  # flag for early/invalid trials
         self.moist_side = 'left'            # correct side for moist
 
         # Containers for online psychometric data
