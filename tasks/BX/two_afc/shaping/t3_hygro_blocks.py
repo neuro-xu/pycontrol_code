@@ -1,5 +1,6 @@
 import pyControl.utility as pc
 from pyb import UART
+from hardware_definition import right_poke, left_poke, center_poke, hygrostat, reward_msPer5uL, teensy_sync
 
 # State machine
 states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
