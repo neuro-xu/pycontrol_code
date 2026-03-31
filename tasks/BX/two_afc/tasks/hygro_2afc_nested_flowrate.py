@@ -8,7 +8,7 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
-pc.v.api_class = 'online_psychometric_curve'
+pc.v.api_class = 'online_psychometric_curve_nested'
 pc.v.subject_id = '' # place holder, will be set from setup_task()
 pc.v.high_side = "left"
 pc.v.low_side = "right"
@@ -17,7 +17,7 @@ pc.v.low_side = "right"
 pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
 pc.v.flow_rates = [500, 1000, 1500]
 # pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
-pc.v.repetitions = 1
+pc.v.repetitions = int(1)
 pc.v.RH_reference = 50  # reward reference, stick to 50%
 
 # Choosing high/low sides based on last digit of subject ID
