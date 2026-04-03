@@ -15,7 +15,7 @@ class online_psychometric_curve_nested(Api):
         self.x_var      = 'current_RH'      # stimulus value / RH
         self.choice_var = 'choice'          # "left" / "right" / None
         self.err_var    = 'early_err_flag'  # flag for early/invalid trials
-        self.cond_var   = 'current_flowrate'        # nested conditions
+        self.cond_var   = 'current_duration'        # nested conditions
         self.moist_side = 'left'            # correct side for moist
 
         # Per-condition online psychometric data:
