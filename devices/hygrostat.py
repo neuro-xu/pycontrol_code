@@ -70,6 +70,7 @@ class Hygrostat:
 
     def off(self):
         """Turning off stuff"""
+        self.set_flowrate(0)
         self.send("C")
         self.uart.deinit()
         
