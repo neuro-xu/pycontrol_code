@@ -2,10 +2,11 @@ from pyb import UART
 from pyControl.hardware import Port
 
 class Hygrostat:
-    def __init__(self, port: Port, baudrate: int = 115200):
+    def __init__(self, port: Port, baudrate: int = 115200, ID=None):
         """Initialize the UART connection to the Teensy."""
         self.port = port
         self.baudrate = baudrate
+        self.ID = ID
         self.uart = UART(port.UART, baudrate)
         self.RH_setpoint = None
         self.flow_rate = None
@@ -17,17 +18,29 @@ class Hygrostat:
 
     def send(self, cmd: str):
         """Send a command with no parameters."""
-        msg = f"{cmd}\n".encode()
+        if self.ID is not None:
+            msg = f"{self.ID}:{cmd}\n".encode()
+        else:
+            msg = f"{cmd}\n".encode()
+        
         self.uart.write(msg)
 
     def send1(self, cmd: str, arg1: int):
         """Send a command with one integer argument."""
-        msg = f"{cmd}{arg1}\n".encode()
+        if self.ID is not None:
+            msg = f"{self.ID}:{cmd}{arg1}\n".encode()
+        else:
+            msg = f"{cmd}{arg1}\n".encode() 
+        
         self.uart.write(msg)
 
     def send2(self, cmd: str, arg1: int, arg2: int):
         """Send a command with two integer arguments."""
-        msg = f"{cmd}{arg1}{arg2}\n".encode()
+        if self.ID is not None:
+            msg = f"{self.ID}:{cmd}{arg1}{arg2}\n".encode()
+        else:
+            msg = f"{cmd}{arg1}{arg2}\n".encode()
+        
         self.uart.write(msg)
 
     # ---------------------------
