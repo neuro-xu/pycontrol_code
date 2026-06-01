@@ -20,14 +20,14 @@ initial_state = "wait_for_poke"
 
 
 # Parameters.
-pc.v.session_duration = 0.5 * pc.hour  # Session duration.
+pc.v.session_duration = 1 * pc.hour  # Session duration.
 pc.v.unit_reward_vol = 5
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
 pc.v.n_allowed_rwds_per_block_mean = 20  # start this very high, like 20. Point is just to teach mice that reward can come from either side port.
 pc.v.n_allowed_rwds_per_block_max = 25
 pc.v.n_allowed_rwds_per_block_min = 15
-pc.v.max_reward_vol = 1000 # 1mL
+pc.v.max_reward_vol = 2000 # 1mL
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / pc.v.unit_reward_vol)  # total per session
 
 

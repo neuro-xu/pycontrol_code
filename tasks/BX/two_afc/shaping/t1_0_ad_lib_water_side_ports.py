@@ -17,7 +17,7 @@ pc.v.reward_duration_multiplier = 1.0  # adjust per mouse; increase if not inter
 # Variables.
 pc.v.n_rewards = 0  # Number of rewards obtained.
 pc.v.p_chose_right = 0 # proportion chose right poke
-pc.v.max_reward_vol = 1000 # uL
+pc.v.max_reward_vol = 2000 # uL
 pc.v.unit_reward_vol = 5 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session

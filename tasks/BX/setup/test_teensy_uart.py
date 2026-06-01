@@ -6,7 +6,7 @@ from hardware_definition import *
 # Define hardware (normally done in seperate hardware definition file).
 uart = UART(board.port_4.UART, 115200)
 uart.init(115200, bits=8, parity=None, stop=1)
-state_duration = 10
+state_duration = 5
 
 # States and events.
 
@@ -21,12 +21,12 @@ initial_state = "UART_off"
 
 # State behaviour functions
 def run_start():
-    uart.write(b'B\n')
+    uart.write(b'0:B\n')
 
 
 def UART_on(event):
     if event == "entry":
-        uart.write(b'S70\n')
+        uart.write(b'0:S70\n')
         timed_goto_state("UART_off", state_duration * second)
  
     elif event == "exit":
@@ -35,7 +35,7 @@ def UART_on(event):
 
 def UART_off(event):
     if event == "entry":
-        uart.write(b'S30\n')
+        uart.write(b'0:S30\n')
         timed_goto_state("UART_on", state_duration * second)
 
 

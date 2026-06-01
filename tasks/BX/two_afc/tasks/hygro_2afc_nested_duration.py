@@ -15,7 +15,8 @@ pc.v.low_side = "right"
 
 # Hygrostat params
 pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
-pc.v.durations = [100, 200, 500, 1000]
+pc.v.durations = [200, 500, 1000]
+pc.v.nested_var = "current_duration"
 # pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
 pc.v.repetitions = int(1)
 pc.v.RH_reference = 50  # reward reference, stick to 50%
@@ -32,7 +33,7 @@ def get_sides_from_subject_id():
 
 drawer = pc.drawer(repetitions=pc.v.repetitions, humidity=pc.v.RH_levels, duration=pc.v.durations)
 
-pc.v.flow_rate = 1030 # mL/min
+pc.v.flow_rate = 1000 # mL/min
 pc.v.current_RH = pc.choice(drawer.original)['humidity']  # start at random RH
 pc.v.current_duration = pc.choice(drawer.original)['duration']
 pc.v.next_RH = pc.v.current_RH
@@ -41,7 +42,7 @@ pc.v.next_duration = pc.v.current_duration
 # Timing params
 pc.v.session_duration = 1.0 * pc.hour  # Session duration.
 pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
 # pc.v.air_delivery_duration = 1000
@@ -49,7 +50,7 @@ pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 
 # Reward sizing
 pc.v.reward_duration_multiplier = 1
-pc.v.max_reward_vol = 2000 # uL
+pc.v.max_reward_vol = 5000 # uL
 pc.v.unit_reward_vol = 5 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
@@ -247,7 +248,7 @@ def inter_trial_interval(event):
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", 
-                                "choice", "outcome", "current_RH", "current_duration", "early_err_flag"])
+                                "choice", "outcome", "current_RH", "current_duration", "early_err_flag", "flow_rate", "nested_var"])
 
         # Do any other required ITI logic in this function
         # do_other_ITI_logic()

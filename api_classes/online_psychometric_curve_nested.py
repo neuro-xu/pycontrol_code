@@ -15,7 +15,7 @@ class online_psychometric_curve_nested(Api):
         self.x_var      = 'current_RH'      # stimulus value / RH
         self.choice_var = 'choice'          # "left" / "right" / None
         self.err_var    = 'early_err_flag'  # flag for early/invalid trials
-        self.cond_var   = 'current_duration'        # nested conditions
+        self.cond_var   = ''                # nested conditions
         self.moist_side = 'left'            # correct side for moist
 
         # Per-condition online psychometric data:
@@ -27,54 +27,55 @@ class online_psychometric_curve_nested(Api):
 
     # runs at the start of session
     def run_start(self):
-        plt.ion()  # interactive mode so we can update without blocking
+        try: 
+            plt.ion()  # interactive mode so we can update without blocking
 
-        self.fig, self.ax = plt.subplots()
+            self.fig, self.ax = plt.subplots()
 
-        # Black background
-        self.fig.patch.set_facecolor('black')
-        self.ax.set_facecolor('black')
+            # Black background
+            self.fig.patch.set_facecolor('black')
+            self.ax.set_facecolor('black')
 
-        # White text / spines / ticks
-        self.ax.tick_params(colors='white')
-        for spine in self.ax.spines.values():
-            spine.set_color('white')
+            # White text / spines / ticks
+            self.ax.tick_params(colors='white')
+            for spine in self.ax.spines.values():
+                spine.set_color('white')
 
-        self.ax.xaxis.label.set_color('white')
-        self.ax.yaxis.label.set_color('white')
-        self.ax.title.set_color('white')
+            self.ax.xaxis.label.set_color('white')
+            self.ax.yaxis.label.set_color('white')
+            self.ax.title.set_color('white')
 
-        try:
             self.fig.canvas.manager.set_window_title('Online psychometric curve')
-        except Exception:
-            pass
 
-        # Reset per-condition data and accuracy
-        self.cond_data = {}
-        self.acc = 0
+            # Reset per-condition data and accuracy
+            self.cond_data = {}
+            self.acc = 0
 
-        self.ax.set_xlabel(self.x_var)
-        self.ax.set_ylabel('P(moist choice)')
-        self.ax.set_ylim(-0.05, 1.05)
+            self.ax.set_xlabel(self.x_var)
+            self.ax.set_ylabel('P(moist choice)')
+            self.ax.set_ylim(-0.05, 1.05)
 
-        self.subject_ID = self.board.data_logger.subject_ID
+            self.subject_ID = self.board.data_logger.subject_ID
 
-        # update moist side based on subject ID
-        if len(self.subject_ID) > 0:
-            self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
-            # print(f'moist side {self.moist_side}')
-        
-        if self.board.data_logger.file_path is not None:
-            self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')
+            # update moist side based on subject ID
+            if self.subject_ID and (len(self.subject_ID) > 0):
+                self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
+                # print(f'moist side {self.moist_side}')
+            
+            if self.board.data_logger.file_path is not None:
+                self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')
 
-        self.title_str = (self.subject_ID if self.subject_ID is not None else '') + \
-                            datetime.now().strftime(' %Y-%m-%d')
+            self.title_str = (self.subject_ID if self.subject_ID is not None else '') + \
+                                datetime.now().strftime(' %Y-%m-%d')
 
-        self.ax.set_title(self.title_str)
+            self.ax.set_title(self.title_str)
 
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-        plt.show(block=False)
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+            plt.show(block=False)
+            
+        except Exception as e:
+            print("Error in run_start():", repr(e))
 
     def _update_internal_counts(self, x_val, moist_choice, cond_val):
         """
@@ -84,32 +85,34 @@ class online_psychometric_curve_nested(Api):
         moist_choice : boolean, True if trial was a "moist" choice
         cond_val     : value of condition variable (e.g. flowrate)
         """
+        try:
+            # Initialize container for this condition if needed
+            if cond_val not in self.cond_data:
+                self.cond_data[cond_val] = {
+                    'x_vals': [],
+                    'x_cnts': [],
+                    'n_trials': []
+                }
 
-        # Initialize container for this condition if needed
-        if cond_val not in self.cond_data:
-            self.cond_data[cond_val] = {
-                'x_vals': [],
-                'x_cnts': [],
-                'n_trials': []
-            }
+            cd = self.cond_data[cond_val]
 
-        cd = self.cond_data[cond_val]
+            if x_val in cd['x_vals']:
+                idx = cd['x_vals'].index(x_val)
+                cd['n_trials'][idx] += 1
+                if moist_choice:
+                    cd['x_cnts'][idx] += 1
+            else:
+                cd['x_vals'].append(x_val)
+                cd['n_trials'].append(1)
+                cd['x_cnts'].append(1 if moist_choice else 0)
 
-        if x_val in cd['x_vals']:
-            idx = cd['x_vals'].index(x_val)
-            cd['n_trials'][idx] += 1
-            if moist_choice:
-                cd['x_cnts'][idx] += 1
-        else:
-            cd['x_vals'].append(x_val)
-            cd['n_trials'].append(1)
-            cd['x_cnts'].append(1 if moist_choice else 0)
-
-            # keep x_vals sorted (and keep counts aligned)
-            order = np.argsort(cd['x_vals'])
-            cd['x_vals']   = list(np.array(cd['x_vals'])[order])
-            cd['n_trials'] = list(np.array(cd['n_trials'])[order])
-            cd['x_cnts']   = list(np.array(cd['x_cnts'])[order])
+                # keep x_vals sorted (and keep counts aligned)
+                order = np.argsort(cd['x_vals'])
+                cd['x_vals']   = list(np.array(cd['x_vals'])[order])
+                cd['n_trials'] = list(np.array(cd['n_trials'])[order])
+                cd['x_cnts']   = list(np.array(cd['x_cnts'])[order])
+        except Exception as e:
+            print("Error in _update_internal_counts():", repr(e))
 
     def plot_update(self):
         """
@@ -163,7 +166,7 @@ class online_psychometric_curve_nested(Api):
                     color=color,
                     ecolor=color,
                     capsize=0,
-                    label=f'{self.cond_var}={cond_val: g}'
+                    label=f'{self.cond_var}={cond_val:g}'
                 )
 
             self.ax.set_xlabel(self.x_var)
@@ -210,8 +213,7 @@ class online_psychometric_curve_nested(Api):
             # ensure we have all needed variables
             if (self.x_var not in vars_dict or
                     self.choice_var not in vars_dict or
-                    self.err_var not in vars_dict or
-                    self.cond_var not in vars_dict):
+                    self.err_var not in vars_dict):
                 return
 
             x_val  = vars_dict[self.x_var]
@@ -220,6 +222,9 @@ class online_psychometric_curve_nested(Api):
             self.acc = vars_dict['overall_ave_correct'] if 'overall_ave_correct' in vars_dict else None
 
             # get condition value (e.g. flowrate); if missing, use a default label
+            if self.cond_var == '':
+                self.cond_var = vars_dict["nested_var"]
+                
             cond_val = vars_dict.get(self.cond_var, 'cond_default')
 
             # skip invalid / early-error trials

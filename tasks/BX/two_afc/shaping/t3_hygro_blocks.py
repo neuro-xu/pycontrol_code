@@ -14,12 +14,12 @@ pc.v.air_delivery_duration = 1000
 pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 
 # General Parameters.
-pc.v.session_duration = 1.0 * pc.hour  # Session duration.
+pc.v.session_duration = 1 * pc.hour  # Session duration.
 # Rwd sizing
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
 pc.v.reward_duration_multiplier = 1
-pc.v.max_reward_vol = 2000 # mL
+pc.v.max_reward_vol = 5000 # mL
 pc.v.unit_reward_vol = 5 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
@@ -28,7 +28,7 @@ pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
 pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
 pc.v.entry_time = 0
@@ -47,12 +47,13 @@ pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 # hygrostat
 pc.v.high_RH = 70
 pc.v.low_RH = 30
-pc.v.flow_rate = 1050 # mL/min
+pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
 pc.v.n_rwd_per_block = 2
+pc.v.randomized_n = [1, 2, 3] # randomly choose n trials per block from this list
 pc.v.rwd_count_per_block = 0
 
 pc.v.subject_id = ''
@@ -87,6 +88,7 @@ def check_update_rewarded_side():
     if pc.v.reward_structure == "alt_block": 
         if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
             pc.v.next_rewarded_side = "left" if (pc.v.rewarded_side == "right") else "right"
+            pc.v.n_rwd_per_block = pc.choice(pc.v.randomized_n)
             pc.v.rwd_count_per_block = 0
         else:
             pc.v.next_rewarded_side = pc.v.rewarded_side
@@ -95,6 +97,7 @@ def check_update_rewarded_side():
     elif pc.v.reward_structure == "prob_block":
         if pc.v.rwd_count_per_block >= pc.v.n_rwd_per_block:
             pc.v.next_rewarded_side = "left" if pc.withprob(0.5) else "right"
+            pc.v.n_rwd_per_block = pc.choice(pc.v.randomized_n)
             pc.v.rwd_count_per_block = 0
         else:
             pc.v.next_rewarded_side = pc.v.rewarded_side
