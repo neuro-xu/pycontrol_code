@@ -19,16 +19,23 @@ pc.v.session_duration = 1 * pc.hour  # Session duration.
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
 pc.v.reward_duration_multiplier = 1
-pc.v.max_reward_vol = 5000 # mL
-pc.v.unit_reward_vol = 5 # uL
-pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
-pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
+pc.v.max_rwd_vol = 5000 # mL
+pc.v.standard_rwd_vol = 5 # uL
+pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
+pc.v.n_allowed_rwds = int(pc.v.max_rwd_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
+
+# Implementing a big reward every n rewards 
+pc.v.reward_schedule = "every_n" # none, every_n, random
+pc.v.big_rwd_every_n = 10
+pc.v.big_rwd_counter = 0
+pc.v.big_rwd_multiplier = 10
+pc.v.reward_durations = pc.v.standard_rwd_durations
 
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
 pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.timeout_duration = 4 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
 pc.v.entry_time = 0
@@ -124,6 +131,23 @@ def is_rewarded(side):
         pc.v.n_rewards += 1
         pc.v.outcome = 1
         pc.v.rwd_count_per_block += 1 
+
+        # update reward duration for current trial
+        if pc.v.reward_schedule == "every_n":
+            if pc.v.n_rewards % pc.v.big_rwd_every_n == 0:
+                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.big_rwd_counter += 1
+            else:
+                pc.v.reward_durations = pc.v.standard_rwd_durations
+        elif pc.v.reward_schedule == "random":
+            if pc.withprob(1.0 / pc.v.big_rwd_every_n):
+                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.big_rwd_counter += 1
+            else:
+                pc.v.reward_durations = pc.v.standard_rwd_durations
+        else:
+            pc.v.reward_durations = pc.v.standard_rwd_durations
+
     else:
         pc.v.outcome = 0
     pc.v.ave_correct_tracker.update(pc.v.outcome)
@@ -223,31 +247,18 @@ def wait_for_side_poke(event):
         # # pick the next trial's rewarded side as soon as we delivered air, so that we have enough time for hygrostat to get ready
         # # check_update_rewarded_side() 
         pass
-        # light up the correct side for shaping
-        # if pc.v.rewarded_side == "right":
-        #     right_poke.LED.on()
-        # else:
-        #     left_poke.LED.on()
 
     elif event == "right_poke":
-        # right_poke.LED.off()
-        # left_poke.LED.off()
         if is_rewarded("right"):
             pc.goto_state("right_reward")
         else:
             pc.goto_state("timeout")
 
     elif event == "left_poke":
-        # right_poke.LED.off()
-        # left_poke.LED.off()
         if is_rewarded("left"):
             pc.goto_state("left_reward")
         else:
             pc.goto_state("timeout")
-
-    # elif event == "exit":
-    #     right_poke.LED.off()
-    #     left_poke.LED.off()
 
 def left_reward(event):
     # Deliver reward to left poke.
@@ -290,7 +301,7 @@ def inter_trial_interval(event):
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", 
-                                "choice", "outcome", "current_RH"])
+                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter"])
 
         # Do any other required ITI logic in this function
         do_other_ITI_logic()

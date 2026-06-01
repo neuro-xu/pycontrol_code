@@ -42,7 +42,7 @@ pc.v.next_duration = pc.v.current_duration
 # Timing params
 pc.v.session_duration = 1.0 * pc.hour  # Session duration.
 pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.timeout_duration = 4 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
 # pc.v.air_delivery_duration = 1000
@@ -51,9 +51,16 @@ pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 # Reward sizing
 pc.v.reward_duration_multiplier = 1
 pc.v.max_reward_vol = 5000 # uL
-pc.v.unit_reward_vol = 5 # uL
-pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
-pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
+pc.v.standard_rwd_vol = 5 # uL
+pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
+pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
+
+# Implementing a big reward every n rewards 
+pc.v.reward_schedule = "every_n" # none, every_n, random
+pc.v.big_rwd_every_n = 10
+pc.v.big_rwd_counter = 0
+pc.v.big_rwd_multiplier = 10
+pc.v.reward_durations = pc.v.standard_rwd_durations
 
 # Variables.
 pc.v.entry_time = 0
@@ -91,6 +98,22 @@ def is_rewarded(side):
         pc.v.n_correct_trials += 1
         pc.v.n_rewards += 1
         pc.v.outcome = 1
+
+        # update reward duration for current trial
+        if pc.v.reward_schedule == "every_n":
+            if pc.v.n_rewards % pc.v.big_rwd_every_n == 0:
+                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.big_rwd_counter += 1
+            else:
+                pc.v.reward_durations = pc.v.standard_rwd_durations
+        elif pc.v.reward_schedule == "random":
+            if pc.withprob(1.0 / pc.v.big_rwd_every_n):
+                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.big_rwd_counter += 1
+            else:
+                pc.v.reward_durations = pc.v.standard_rwd_durations
+        else:
+            pc.v.reward_durations = pc.v.standard_rwd_durations
     else:
         pc.v.outcome = 0
     pc.v.ave_correct_tracker.update(pc.v.outcome)
@@ -248,7 +271,7 @@ def inter_trial_interval(event):
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", 
-                                "choice", "outcome", "current_RH", "current_duration", "early_err_flag", "flow_rate", "nested_var"])
+                                "choice", "outcome", "current_RH", "current_duration", "early_err_flag", "flow_rate", "nested_var", "reward_durations", "n_rewards", "big_rwd_counter"])
 
         # Do any other required ITI logic in this function
         # do_other_ITI_logic()
