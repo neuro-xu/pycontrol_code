@@ -73,7 +73,7 @@ class online_psychometric_curve_nested(Api):
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
             plt.show(block=False)
-            
+
         except Exception as e:
             print("Error in run_start():", repr(e))
 
@@ -175,7 +175,7 @@ class online_psychometric_curve_nested(Api):
 
             acc = self.acc if self.acc is not None else 0.0
             self.ax.set_title(
-                f'{self.title_str} (N = {int(total_n)}, accuracy {acc: 1.3f})'
+                f'{self.title_str} (N = {int(total_n)}, accuracy {acc:1.3f})'
             )
 
             # Legend styling for dark background

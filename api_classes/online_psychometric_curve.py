@@ -143,7 +143,7 @@ class online_psychometric_curve(Api):
             self.ax.set_xlabel(self.x_var)
             self.ax.set_ylabel('P(moist choice)')
             self.ax.set_ylim(-0.05, 1.05)
-            self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc: 1.3f})')
+            self.ax.set_title(f'{self.title_str} (N = {int(n.sum())}, accuracy {self.acc:1.3f})')
 
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()

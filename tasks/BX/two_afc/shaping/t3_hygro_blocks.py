@@ -25,7 +25,7 @@ pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_m
 pc.v.n_allowed_rwds = int(pc.v.max_rwd_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
 
 # Implementing a big reward every n rewards 
-pc.v.reward_schedule = "every_n" # none, every_n, random
+pc.v.reward_schedule = "random" # none, every_n, random
 pc.v.big_rwd_every_n = 10
 pc.v.big_rwd_counter = 0
 pc.v.big_rwd_multiplier = 10
@@ -52,14 +52,14 @@ pc.v.n_rewards = 0  # total number of rewards obtained.
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
 # hygrostat
-pc.v.high_RH = 70
-pc.v.low_RH = 30
+pc.v.high_RH = 80
+pc.v.low_RH = 20
 pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 2
+pc.v.n_rwd_per_block = 3
 pc.v.randomized_n = [1, 2, 3] # randomly choose n trials per block from this list
 pc.v.rwd_count_per_block = 0
 

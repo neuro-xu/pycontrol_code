@@ -14,10 +14,10 @@ pc.v.high_side = "left"
 pc.v.low_side = "right"
 
 # Hygrostat params
-# pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
-# pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
-pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70] # easy entry for new cohort
-pc.v.RH_repetitions = [3, 2, 1, 1, 1, 1, 2, 3]
+pc.v.RH_levels = [24, 30, 36, 42, 47, 53, 58, 64, 70, 76]
+pc.v.RH_repetitions = [1, 2, 3, 3, 2, 2, 3, 3, 2, 1] # balance easy and near-threshold levels
+# pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70] # easy entry for new cohort
+# pc.v.RH_repetitions = [3, 2, 1, 1, 1, 1, 2, 3]
 pc.v.RH_reference = 50  # reward reference, stick to 50%
 
 # Choosing high/low sides based on last digit of subject ID
@@ -53,7 +53,7 @@ pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_m
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
 
 # Implementing a big reward every n rewards 
-pc.v.reward_schedule = "every_n" # none, every_n, random
+pc.v.reward_schedule = "random" # none, every_n, random
 pc.v.big_rwd_every_n = 10
 pc.v.big_rwd_counter = 0
 pc.v.big_rwd_multiplier = 10

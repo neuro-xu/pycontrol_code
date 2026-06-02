@@ -56,7 +56,7 @@ pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_m
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
 
 # Implementing a big reward every n rewards 
-pc.v.reward_schedule = "every_n" # none, every_n, random
+pc.v.reward_schedule = "random" # none, every_n, random
 pc.v.big_rwd_every_n = 10
 pc.v.big_rwd_counter = 0
 pc.v.big_rwd_multiplier = 10
