@@ -8,6 +8,7 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
+pc.v.api_class = 'online_psychometric_curve'
 # Stimulus parameters
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
 pc.v.air_delivery_duration = 1000
@@ -66,6 +67,7 @@ pc.v.rwd_count_per_block = 0
 pc.v.subject_id = ''
 pc.v.high_side = "left"
 pc.v.low_side = "right"
+pc.v.early_err_flag = False
 
 # helpers
 def get_sides_from_subject_id():
@@ -213,6 +215,7 @@ def wait_for_center_poke(event):
         center_poke.LED.off()
         disable_odor_valves()
         pc.v.n_early_errors += 1
+        pc.v.early_err_flag = True
         pc.goto_state("timeout")
 
     # If ms is still licking at reward port, then restart the 
@@ -301,8 +304,9 @@ def inter_trial_interval(event):
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", 
-                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter"])
+                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter", "early_err_flag"])
 
+        pc.v.early_err_flag = False  # reset flag for next trial
         # Do any other required ITI logic in this function
         do_other_ITI_logic()
     

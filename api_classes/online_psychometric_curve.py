@@ -209,7 +209,7 @@ class online_psychometric_curve(Api):
                     if sum(self.n_trials) > 5:
                         # fitting
                         data = np.column_stack((self.x_vals, self.x_cnts, self.n_trials))
-                        res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=True)
+                        res = ps.psignifit(data, experiment_type='yes/no', sigmoid='gauss', debug=False, stimulus_range=[0,100])
 
                         # params
                         PSE = res.threshold(0.5, unscaled=True)[0]

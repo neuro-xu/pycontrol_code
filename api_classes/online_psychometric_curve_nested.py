@@ -269,7 +269,7 @@ class online_psychometric_curve_nested(Api):
 
                     # fitting
                     res = ps.psignifit(data, experiment_type='yes/no',
-                                       sigmoid='gauss', debug=True)
+                                       sigmoid='gauss', debug=True, stimulus_range=[0,100])
 
                     # params
                     PSE = res.threshold(0.5, unscaled=True)[0]

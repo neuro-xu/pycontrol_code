@@ -14,7 +14,7 @@ pc.v.high_side = "left"
 pc.v.low_side = "right"
 
 # Hygrostat params
-pc.v.RH_levels = [30, 36, 42, 47, 53, 58, 64, 70]
+pc.v.RH_levels = [24, 30, 36, 42, 47, 53, 58, 64, 70, 76]
 pc.v.flow_rates = [100, 500, 1000, 1500, 2000]
 pc.v.nested_var = "current_flowrate"
 # pc.v.RH_repetitions = [2, 3, 3, 2, 2, 3, 3, 2] # balance easy and near-threshold levels
