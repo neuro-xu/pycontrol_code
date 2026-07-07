@@ -6,7 +6,7 @@ from hardware_definition import right_poke, left_poke, center_poke, hygrostat, r
 # State machine
 states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
 events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_poke_out", "left_poke_out", "session_timer", "finish_ITI",
-        "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
+        "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync", "stop_reward"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
 pc.v.api_class = 'online_psychometric_curve'
@@ -18,8 +18,6 @@ pc.v.final_valve_flush_duration = 0  # ensure this is shorter than the ITI
 # General Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
 # Rwd sizing
-# For rwd durn multplier of 1, 1 mL ~ 125 rewards.
-# For rwd durn multiplier of 0.75, ~ 225 rewards.
 pc.v.reward_duration_multiplier = 2
 pc.v.max_reward_vol = 2000 # mL
 pc.v.standard_rwd_vol = 5 # uL
@@ -84,10 +82,6 @@ def get_sides_from_subject_id():
 def set_RH():
     hygrostat.set_humidity(pc.v.next_RH)
 
-# We don't need this for hygrostat stuff..
-def disable_odor_valves():
-    pass
-
 def do_other_ITI_logic():
     check_update_rewarded_side() # moving it here to update next trial after choice
     pc.v.rewarded_side = pc.v.next_rewarded_side
@@ -127,32 +121,47 @@ def check_update_rewarded_side():
     pc.publish_event("set_RH_for_trial")
     return
 
+# --- New helper: decide reward duration for this trial, but do NOT
+#     change n_rewards, n_correct_trials, etc. yet.
+def choose_reward_duration_for_trial():
+    """
+    Decide whether this trial gets a standard or big reward and
+    update pc.v.reward_durations accordingly. Does NOT count rewards
+    or outcomes; that happens when the mouse actually chooses correctly.
+    """
+    # Start from standard durations.
+    pc.v.reward_durations = pc.v.standard_rwd_durations
+
+    if pc.v.reward_schedule == "every_n":
+        # Use (n_rewards + 1) because this is the *upcoming* reward.
+        if (pc.v.n_rewards + 1) % pc.v.big_rwd_every_n == 0:
+            pc.v.reward_durations = [d * pc.v.big_rwd_multiplier 
+                                     for d in pc.v.standard_rwd_durations]
+    elif pc.v.reward_schedule == "random":
+        if pc.withprob(1.0 / pc.v.big_rwd_every_n):
+            pc.v.reward_durations = [d * pc.v.big_rwd_multiplier 
+                                     for d in pc.v.standard_rwd_durations]
+
 def is_rewarded(side):
+    """
+    Called when the mouse actually makes the correct side poke.
+    Here we log choice, outcome, n_rewards, etc.
+    Reward duration for this trial has already been chosen by
+    choose_reward_duration_for_trial().
+    """
     pc.v.choice = side
+
     if side == pc.v.rewarded_side:
+        pc.v.outcome = 1
         pc.v.n_correct_trials += 1
         pc.v.n_rewards += 1
-        pc.v.outcome = 1
-        pc.v.rwd_count_per_block += 1 
-
-        # update reward duration for current trial
-        if pc.v.reward_schedule == "every_n":
-            if pc.v.n_rewards % pc.v.big_rwd_every_n == 0:
-                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
-                pc.v.big_rwd_counter += 1
-            else:
-                pc.v.reward_durations = pc.v.standard_rwd_durations
-        elif pc.v.reward_schedule == "random":
-            if pc.withprob(1.0 / pc.v.big_rwd_every_n):
-                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
-                pc.v.big_rwd_counter += 1
-            else:
-                pc.v.reward_durations = pc.v.standard_rwd_durations
-        else:
-            pc.v.reward_durations = pc.v.standard_rwd_durations
-
+        pc.v.rwd_count_per_block += 1
+        pc.v.big_rwd_counter += int(
+            pc.v.reward_durations != pc.v.standard_rwd_durations
+        )  # increment if this was a big reward
     else:
-        pc.v.outcome = 0
+        pc.v.outcome = 0  # should rarely be used now; see behavior logic below
+
     pc.v.ave_correct_tracker.update(pc.v.outcome)
     return pc.v.outcome
 
@@ -170,7 +179,6 @@ def run_end():
     right_poke.SOL.off()
     left_poke.SOL.off()
     center_poke.LED.off()
-    disable_odor_valves()
     hygrostat.off()
 
     # Do whatever else...save data maybe?
@@ -186,6 +194,9 @@ def all_states(event):
     elif event == "close_final_valve":
         center_poke.SOL.off()
 
+    elif event == 'stop_reward':
+        left_poke.SOL.off()
+        right_poke.SOL.off()
     # After new trial's odor is selected in ITI, set the odor valves
     # so there is enough time for the odor to flow thru the tubes.
     # Importantly, we make sure the final valve is closed (200 ms
@@ -199,9 +210,7 @@ def all_states(event):
 
 
 ### State-machine ###
-
 def wait_for_center_poke(event):
-
     if event == "entry":
         center_poke.LED.on()  # cues mouse that trial is available
         pc.v.entry_time = pc.get_current_time()  # start early-error buffer
@@ -214,7 +223,6 @@ def wait_for_center_poke(event):
         and (event == "left_poke" or event == "right_poke")
     ):
         center_poke.LED.off()
-        disable_odor_valves()
         pc.v.n_early_errors += 1
         pc.v.early_err_flag = True
         pc.goto_state("timeout")
@@ -240,60 +248,50 @@ def deliver_air(event):
         center_poke.SOL.on()  # delivers the odor!
         pc.timed_goto_state("wait_for_side_poke", pc.v.air_delivery_duration)
     elif event == "exit":
-        disable_odor_valves()  # close the odor valves to allow final valve to flush w clean air
         pc.set_timer("close_final_valve", (pc.v.final_valve_flush_duration))  # this will close the final valve after flush
         pc.set_timer("close_final_valve_done", (pc.v.final_valve_flush_duration + 200))  # this allows buffer time for final valve to close before switching odor valves on again
 
-
 def wait_for_side_poke(event):
     if event == "entry":
-        # not saving much time this way...
-        # # pick the next trial's rewarded side as soon as we delivered air, so that we have enough time for hygrostat to get ready
-        # # check_update_rewarded_side() 
-        pass
-        # light up the correct side for shaping
+        # Decide reward duration for this trial and immediately
+        # open the water valve on the rewarded side.
+        choose_reward_duration_for_trial()
+
+        if pc.v.rewarded_side == "right":
+            right_poke.SOL.on()
+            pc.set_timer(
+                "stop_reward",
+                pc.v.reward_duration_multiplier * pc.v.reward_durations[1]
+            )
+        else:
+            left_poke.SOL.on()
+            pc.set_timer(
+                "stop_reward",
+                pc.v.reward_duration_multiplier * pc.v.reward_durations[1]
+            )
+
+        # You can optionally light the rewarded side here for shaping:
         # if pc.v.rewarded_side == "right":
         #     right_poke.LED.on()
         # else:
         #     left_poke.LED.on()
 
     elif event == "right_poke":
-        # right_poke.LED.off()
-        # left_poke.LED.off()
-        if is_rewarded("right"):
-            pc.goto_state("right_reward")
-        else:
-            pc.goto_state("timeout")
+        # Wrong side does nothing if rewarded_side is left.
+        if pc.v.rewarded_side == "right":
+            # Correct choice: log outcome and start ITI.
+            is_rewarded("right")
+            pc.goto_state("inter_trial_interval")
 
     elif event == "left_poke":
-        # right_poke.LED.off()
-        # left_poke.LED.off()
-        if is_rewarded("left"):
-            pc.goto_state("left_reward")
-        else:
-            pc.goto_state("timeout")
+        # Wrong side does nothing if rewarded_side is right.
+        if pc.v.rewarded_side == "left":
+            # Correct choice: log outcome and start ITI.
+            is_rewarded("left")
+            pc.goto_state("inter_trial_interval")
 
-    # elif event == "exit":
-    #     right_poke.LED.off()
-    #     left_poke.LED.off()
-
-def left_reward(event):
-    # Deliver reward to left poke.
-    if event == "entry":
-        pc.timed_goto_state("inter_trial_interval", pc.v.reward_duration_multiplier * pc.v.reward_durations[0])
-        left_poke.SOL.on()
-    elif event == "exit":
-        left_poke.SOL.off()
-
-
-def right_reward(event):
-    # Deliver reward to right poke.
-    if event == "entry":
-        pc.timed_goto_state("inter_trial_interval", pc.v.reward_duration_multiplier * pc.v.reward_durations[1])
-        right_poke.SOL.on()
-    elif event == "exit":
-        right_poke.SOL.off()
-
+    # No timeout, no ITI triggered by wrong pokes.
+    # Mouse is forced to keep sampling until it visits the rewarded port.
 
 def timeout(event):
     if event == "entry":
@@ -302,44 +300,41 @@ def timeout(event):
 
 def inter_trial_interval(event):
     if event == "entry":
-         
-        # Start ITI timer. Using a timer instead of "timed_goto_state()"
-        # allows us to reset the timer if mouse isn't finished licking 
-        # the reward, without having to restart the entire ITI state, 
-        # which would require lots of flags to only update things once, 
-        # and would be generally confusing.
+        # Start ITI timer.
         pc.set_timer("finish_ITI", pc.v.ITI_duration)
         pc.v.entry_time = pc.get_current_time()
 
-        # Update vars
+        # Update trial-level stats.
         pc.v.n_total_trials += 1
-        if pc.v.n_total_trials > 0: # this will skip the initial ITI at run start
+        if pc.v.n_total_trials > 0:
             pc.v.mov_ave_correct = pc.v.ave_correct_tracker.value
-            pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
-            pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
-                                "mov_ave_correct", "overall_ave_correct", "rewarded_side", "early_err_flag",
-                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter"])
-        
-        pc.v.early_err_flag = False  # reset flag for next trial
-        # Do any other required ITI logic in this function
+            pc.v.overall_ave_correct = pc.v.n_correct_trials / max(
+                pc.v.n_total_trials - pc.v.n_early_errors, 1
+            )
+            pc.print_variables([
+                "n_total_trials", "n_correct_trials", "n_early_errors",
+                "mov_ave_correct", "overall_ave_correct", "rewarded_side",
+                "early_err_flag", "choice", "outcome", "current_RH",
+                "reward_durations", "n_rewards", "big_rwd_counter"
+            ])
+
+        pc.v.early_err_flag = False
         do_other_ITI_logic()
-    
-    # If mouse is still licking the reward, let it keep going until it's done.
+
+    # Optional: keep your "still licking in reward port extends ITI" rule
     elif (
         pc.v.outcome
         and (
-                ((event == "left_poke") and pc.v.choice == "left")
-                or ((event == "right_poke") and pc.v.choice == "right")
-            )
-        and ((pc.get_current_time() - pc.v.entry_time) < (pc.v.ITI_duration/2))
+            (event == "left_poke" and pc.v.choice == "left")
+            or (event == "right_poke" and pc.v.choice == "right")
+        )
+        and ((pc.get_current_time() - pc.v.entry_time) < (pc.v.ITI_duration / 2))
     ):
         pc.reset_timer("finish_ITI", pc.v.ITI_duration)
 
-    # Once ITI finishes, go to first state again.
     elif event == "finish_ITI":
         pc.goto_state("wait_for_center_poke")
-    
-    # Check if we need to stop task for any reason.
+
     elif event == "exit":
         if pc.v.n_rewards >= pc.v.n_allowed_rwds:
             pc.stop_framework()

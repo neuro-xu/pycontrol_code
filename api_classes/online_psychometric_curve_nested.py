@@ -6,7 +6,7 @@ from datetime import datetime
 import psignifit as ps
 import psignifit.psigniplot as psp
 
-
+# online psychometric curve with nested conditions (eg flowrate)
 class online_psychometric_curve_nested(Api):
     def __init__(self):
         super().__init__()

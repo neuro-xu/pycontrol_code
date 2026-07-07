@@ -121,13 +121,13 @@ def is_rewarded(side):
         # update reward duration for current trial
         if pc.v.reward_schedule == "every_n":
             if pc.v.n_rewards % pc.v.big_rwd_every_n == 0:
-                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.reward_durations = [d * pc.v.big_rwd_multiplier for d in pc.v.standard_rwd_durations]
                 pc.v.big_rwd_counter += 1
             else:
                 pc.v.reward_durations = pc.v.standard_rwd_durations
         elif pc.v.reward_schedule == "random":
             if pc.withprob(1.0 / pc.v.big_rwd_every_n):
-                pc.v.reward_durations = pc.v.standard_rwd_durations * pc.v.big_rwd_multiplier
+                pc.v.reward_durations = [d * pc.v.big_rwd_multiplier for d in pc.v.standard_rwd_durations]
                 pc.v.big_rwd_counter += 1
             else:
                 pc.v.reward_durations = pc.v.standard_rwd_durations
