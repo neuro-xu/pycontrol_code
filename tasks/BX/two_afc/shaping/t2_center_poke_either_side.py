@@ -18,13 +18,13 @@ pc.v.final_valve_flush_duration = 500
 # General Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
 pc.v.reward_duration_multiplier = 1
-pc.v.ITI_duration = 3 * pc.second  # Inter trial interval duration.
-pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
+pc.v.timeout_duration = 0.5 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # use volume instead of duration
 # pc.v.n_allowed_rwds = 125  # total per session
-pc.v.max_reward_vol = 5000 # uL
-pc.v.unit_reward_vol = 5 # uL
+pc.v.max_reward_vol = 1500 # uL
+pc.v.unit_reward_vol = 10 # uL
 pc.v.reward_durations = [x / 5.0 * pc.v.unit_reward_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_reward_vol / (pc.v.unit_reward_vol * pc.v.reward_duration_multiplier))  # total per session
 

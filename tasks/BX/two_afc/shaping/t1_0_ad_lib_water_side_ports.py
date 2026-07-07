@@ -12,7 +12,7 @@ initial_state = "wait_for_poke"
 # Parameters.
 pc.v.session_duration = 1 * pc.hour  # Session duration.
 pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration.
-pc.v.reward_duration_multiplier = 1.0  # adjust per mouse; increase if not interested
+pc.v.reward_duration_multiplier = 1.5  # adjust per mouse; increase if not interested
 
 # Variables.
 pc.v.n_rewards = 0  # Number of rewards obtained.
