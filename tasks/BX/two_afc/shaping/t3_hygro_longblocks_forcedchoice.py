@@ -34,7 +34,7 @@ pc.v.reward_durations = pc.v.standard_rwd_durations
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.ITI_duration = 3 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
 # pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
@@ -52,15 +52,15 @@ pc.v.n_rewards = 0  # total number of rewards obtained.
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
 # hygrostat
-pc.v.high_RH = 80
-pc.v.low_RH = 20
+pc.v.high_RH = 70
+pc.v.low_RH = 30
 pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 10
-pc.v.randomized_n = [10] # randomly choose n trials per block from this list
+pc.v.randomized_n = [2,3,4] # randomly choose n trials per block from this list
+pc.v.n_rwd_per_block = pc.v.randomized_n[0]
 pc.v.rwd_count_per_block = 0
 
 pc.v.subject_id = ''
