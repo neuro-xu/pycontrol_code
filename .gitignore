@@ -13,5 +13,5 @@ controls_dialogs/
 !hardware_definitions/example_hardware_definition.py
 
 tasks/
-!tasks/BX/*
+!tasks/BX/
 !tasks/example
