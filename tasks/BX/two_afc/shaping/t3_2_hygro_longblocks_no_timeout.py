@@ -3,7 +3,7 @@ from pyb import UART
 from hardware_definition import right_poke, left_poke, center_poke, hygrostat, reward_msPer5uL, teensy_sync
 
 # State machine
-states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval", "timeout"]
+states = ["wait_for_center_poke", "deliver_air", "wait_for_side_poke", "left_reward", "right_reward", "inter_trial_interval"]
 events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_poke_out", "left_poke_out", "session_timer", "finish_ITI",
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
@@ -19,7 +19,7 @@ pc.v.session_duration = 1 * pc.hour  # Session duration.
 # Rwd sizing
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
-pc.v.reward_duration_multiplier = 2
+pc.v.reward_duration_multiplier = 1.5
 pc.v.max_reward_vol = 2000 # mL
 pc.v.standard_rwd_vol = 5 # uL
 pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
@@ -35,8 +35,8 @@ pc.v.reward_durations = pc.v.standard_rwd_durations
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+# pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
 pc.v.entry_time = 0
@@ -206,22 +206,22 @@ def wait_for_center_poke(event):
         pc.v.entry_time = pc.get_current_time()  # start early-error buffer
         # set_RH()  # replaced by all_states logic
     
-    # If mouse pokes either side port *after* the early-error buffer
-    # has elapsed, then timeout and restart the trial.
-    elif (
-        ((pc.get_current_time() - pc.v.entry_time) > 300)
-        and (event == "left_poke" or event == "right_poke")
-    ):
-        center_poke.LED.off()
-        disable_odor_valves()
-        pc.v.n_early_errors += 1
-        pc.v.early_err_flag = True
-        pc.goto_state("timeout")
+    # # If mouse pokes either side port *after* the early-error buffer
+    # # has elapsed, then timeout and restart the trial.
+    # elif (
+    #     ((pc.get_current_time() - pc.v.entry_time) > 300)
+    #     and (event == "left_poke" or event == "right_poke")
+    # ):
+    #     center_poke.LED.off()
+    #     disable_odor_valves()
+    #     pc.v.n_early_errors += 1
+    #     pc.v.early_err_flag = True
+    #     pc.goto_state("timeout")
 
-    # If ms is still licking at reward port, then restart the 
-    # early-error buffer when it leaves the side port.
-    elif (event == "left_poke_out" or event == "right_poke_out"):
-        pc.v.entry_time = pc.get_current_time()
+    # # If ms is still licking at reward port, then restart the 
+    # # early-error buffer when it leaves the side port.
+    # elif (event == "left_poke_out" or event == "right_poke_out"):
+    #     pc.v.entry_time = pc.get_current_time()
 
     # Require mouse to hold nose in center port for a certain amt of time.
     # If it does not, it's not an error, just nothing happens.
@@ -261,16 +261,16 @@ def wait_for_side_poke(event):
         # left_poke.LED.off()
         if is_rewarded("right"):
             pc.goto_state("right_reward")
-        else:
-            pc.goto_state("timeout")
+        # else:
+        #     pc.goto_state("timeout")
 
     elif event == "left_poke":
         # right_poke.LED.off()
         # left_poke.LED.off()
         if is_rewarded("left"):
             pc.goto_state("left_reward")
-        else:
-            pc.goto_state("timeout")
+        # else:
+        #     pc.goto_state("timeout")
 
     # elif event == "exit":
     #     right_poke.LED.off()
@@ -294,9 +294,9 @@ def right_reward(event):
         right_poke.SOL.off()
 
 
-def timeout(event):
-    if event == "entry":
-        pc.timed_goto_state("inter_trial_interval", pc.v.timeout_duration)
+# def timeout(event):
+#     if event == "entry":
+#         pc.timed_goto_state("inter_trial_interval", pc.v.timeout_duration)
 
 
 def inter_trial_interval(event):
