@@ -8,7 +8,7 @@ events = ["center_poke", "right_poke", "left_poke", "center_poke_out", "right_po
         "close_final_valve", "close_final_valve_done", "center_poke_held", "set_RH_for_trial", "teensy_sync"]
 initial_state = "inter_trial_interval" # starts with ITI so we have time for hygrostat to get ready
 
-pc.v.api_class = 'online_psychometric_curve'
+# pc.v.api_class = 'online_psychometric_curve'
 # Stimulus parameters
 pc.v.required_center_hold_duration = 300  # ms. Currently, this is ~ the absolute minimum time the current trial's odor will have to fill the tube before the final valve.
 pc.v.air_delivery_duration = 1000
@@ -20,7 +20,7 @@ pc.v.session_duration = 1 * pc.hour  # Session duration.
 # For rwd durn multplier of 1, 1 mL ~ 125 rewards.
 # For rwd durn multiplier of 0.75, ~ 225 rewards.
 pc.v.reward_duration_multiplier = 1
-pc.v.max_rwd_vol = 5000 # mL
+pc.v.max_rwd_vol = 2000 # mL
 pc.v.standard_rwd_vol = 5 # uL
 pc.v.standard_rwd_durations = [x / 5.0 * pc.v.standard_rwd_vol for x in reward_msPer5uL]  # Reward delivery duration (ms) [left, right].
 pc.v.n_allowed_rwds = int(pc.v.max_rwd_vol / (pc.v.standard_rwd_vol * pc.v.reward_duration_multiplier))  # total per session
@@ -35,8 +35,8 @@ pc.v.reward_durations = pc.v.standard_rwd_durations
 pc.v.rewarded_side = "left" if (pc.random() > 0.5) else "right"
 pc.v.next_rewarded_side = pc.v.rewarded_side # Next trial's rewarded side. Use this so that we can set hygrostat for the next trial before current choice is made.
 
-pc.v.ITI_duration = 5 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
-pc.v.timeout_duration = 4 * pc.second  # timeout for wrong trials (in addition to ITI)
+pc.v.ITI_duration = 2 * pc.second  # Inter trial interval duration. Ensure this is longer than final valve flush duration.
+pc.v.timeout_duration = 2 * pc.second  # timeout for wrong trials (in addition to ITI)
 
 # Variables.
 pc.v.entry_time = 0
@@ -53,15 +53,15 @@ pc.v.n_rewards = 0  # total number of rewards obtained.
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
 # hygrostat
-pc.v.high_RH = 80
-pc.v.low_RH = 20
+pc.v.high_RH = 70
+pc.v.low_RH = 30
 pc.v.flow_rate = 1030 # mL/min
 pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 3
-pc.v.randomized_n = [1, 2, 3] # randomly choose n trials per block from this list
+pc.v.randomized_n = [3,4,5] # randomly choose n trials per block from this list
+pc.v.n_rwd_per_block = pc.v.randomized_n[0]
 pc.v.rwd_count_per_block = 0
 
 pc.v.subject_id = ''

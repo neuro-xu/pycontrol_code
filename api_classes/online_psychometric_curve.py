@@ -61,8 +61,11 @@ class online_psychometric_curve(Api):
 
         # update moist side based on subject ID
         if len(self.subject_ID) > 0:
-            self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
-            # print(f'moist side {self.moist_side}')
+            try:
+                self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
+            except Exception:
+                pass
+            print(f'moist side {self.moist_side}')
         
         if self.board.data_logger.file_path is not None:
             self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')

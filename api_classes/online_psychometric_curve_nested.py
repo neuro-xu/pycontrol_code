@@ -59,8 +59,11 @@ class online_psychometric_curve_nested(Api):
 
             # update moist side based on subject ID
             if self.subject_ID and (len(self.subject_ID) > 0):
-                self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
-                # print(f'moist side {self.moist_side}')
+                try:
+                    self.moist_side = 'left' if int(self.subject_ID.split("_")[0][-1]) % 2 == 1 else 'right'
+                except Exception:
+                    pass
+                print(f'moist side {self.moist_side}')
             
             if self.board.data_logger.file_path is not None:
                 self.file_path = self.board.data_logger.file_path.replace('.tsv', '_psychometric.pdf')
@@ -255,7 +258,22 @@ class online_psychometric_curve_nested(Api):
         # Fit and save separate psychometric functions per condition
         try:
             if hasattr(self, 'fig') and self.subject_ID is not None and self.file_path is not None:
+                # clear figure
+                self.ax.clear()
 
+                # Keep black background each redraw
+                self.ax.set_facecolor('black')
+                self.fig.patch.set_facecolor('black')
+
+                # White ticks / labels / spines again (clearing resets them)
+                self.ax.tick_params(colors='white')
+                for spine in self.ax.spines.values():
+                    spine.set_color('white')
+
+                self.ax.xaxis.label.set_color('white')
+                self.ax.yaxis.label.set_color('white')
+                self.ax.title.set_color('white')
+                
                 for cond_val, cd in self.cond_data.items():
                     if sum(cd['n_trials']) <= 5:
                         continue  # not enough data to fit
@@ -297,22 +315,6 @@ class online_psychometric_curve_nested(Api):
                         cond_val=cond_val
                     )
 
-                    # clear figure
-                    self.ax.clear()
-
-                    # Keep black background each redraw
-                    self.ax.set_facecolor('black')
-                    self.fig.patch.set_facecolor('black')
-
-                    # White ticks / labels / spines again (clearing resets them)
-                    self.ax.tick_params(colors='white')
-                    for spine in self.ax.spines.values():
-                        spine.set_color('white')
-
-                    self.ax.xaxis.label.set_color('white')
-                    self.ax.yaxis.label.set_color('white')
-                    self.ax.title.set_color('white')
-
                     # plot fitted psychometric for this condition
                     psp.plot_psychometric_function(
                         res,
@@ -322,25 +324,20 @@ class online_psychometric_curve_nested(Api):
                         estimate_type='mean'
                     )
 
-                    self.ax.set_xlabel(self.x_var)
-                    self.ax.set_ylabel('P(moist choice)')
-                    self.ax.set_ylim(-0.05, 1.05)
+                self.ax.set_xlabel(self.x_var)
+                self.ax.set_ylabel('P(moist choice)')
+                self.ax.set_ylim(-0.05, 1.05)
 
-                    acc = self.acc if self.acc is not None else 0.0
-                    self.ax.set_title(
-                        f'{self.title_str} \n'
-                        f'({self.cond_var}={cond_val}, '
-                        f'N = {sum(cd["n_trials"]):g}, '
-                        f'accuracy {acc:1.2f}, '
-                        f'JND {JND:1.1f}, PSE {PSE:1.1f})'
-                    )
+                self.ax.set_title(
+                    f'{self.title_str} \n'
+                    f'N = {sum(cd['n_trials']):g}, '
+                )
 
-                    self.fig.canvas.draw()
-                    self.fig.canvas.flush_events()
+                self.fig.canvas.draw()
+                self.fig.canvas.flush_events()
 
-                    # save one PDF per condition
-                    pdf_path_cond = self.file_path.replace('.pdf', f'_{self.cond_var}-{cond_val}.pdf')
-                    self.fig.savefig(pdf_path_cond)
+                # save PDF
+                self.fig.savefig(self.file_path)
 
                 # Optionally close at end
                 # plt.close(self.fig)

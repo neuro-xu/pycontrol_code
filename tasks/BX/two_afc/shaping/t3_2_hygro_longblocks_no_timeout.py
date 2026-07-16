@@ -50,6 +50,8 @@ pc.v.choice = "right"
 pc.v.outcome = 0
 pc.v.n_correct_trials = 0
 pc.v.n_rewards = 0  # total number of rewards obtained.
+pc.v.n_attempts = 0 # number of attempts in a trial
+pc.v.avg_n_attempts = 0 # avg # attempts across trials
 pc.v.ave_correct_tracker = pc.Exp_mov_ave(10)
 
 # hygrostat
@@ -60,8 +62,8 @@ pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.n_rwd_per_block = 10
-pc.v.randomized_n = [10] # randomly choose n trials per block from this list
+pc.v.randomized_n = [3,4,5] # randomly choose n trials per block from this list
+pc.v.n_rwd_per_block = pc.v.randomized_n[0]
 pc.v.rwd_count_per_block = 0
 
 pc.v.subject_id = ''
@@ -257,6 +259,7 @@ def wait_for_side_poke(event):
         #     left_poke.LED.on()
 
     elif event == "right_poke":
+        pc.v.n_attempts += 1
         # right_poke.LED.off()
         # left_poke.LED.off()
         if is_rewarded("right"):
@@ -265,6 +268,7 @@ def wait_for_side_poke(event):
         #     pc.goto_state("timeout")
 
     elif event == "left_poke":
+        pc.v.n_attempts += 1
         # right_poke.LED.off()
         # left_poke.LED.off()
         if is_rewarded("left"):
@@ -315,11 +319,14 @@ def inter_trial_interval(event):
         if pc.v.n_total_trials > 0: # this will skip the initial ITI at run start
             pc.v.mov_ave_correct = pc.v.ave_correct_tracker.value
             pc.v.overall_ave_correct = pc.v.n_correct_trials / max(pc.v.n_total_trials - pc.v.n_early_errors, 1)
+            pc.v.avg_n_attempts = pc.v.avg_n_attempts * (pc.v.n_rewards - 1) / pc.v.n_rewards + pc.v.n_attempts / pc.v.n_rewards
             pc.print_variables(["n_total_trials", "n_correct_trials", "n_early_errors",
                                 "mov_ave_correct", "overall_ave_correct", "rewarded_side", "early_err_flag",
-                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter"])
+                                "choice", "outcome", "current_RH", "reward_durations", "n_rewards", "big_rwd_counter",
+                                "n_attempts", "avg_n_attempts"])
         
         pc.v.early_err_flag = False  # reset flag for next trial
+        pc.v.n_attempts = 0 # reset
         # Do any other required ITI logic in this function
         do_other_ITI_logic()
     

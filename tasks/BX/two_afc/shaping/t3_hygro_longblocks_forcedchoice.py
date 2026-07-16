@@ -59,7 +59,7 @@ pc.v.current_RH = pc.v.low_RH
 
 # reward structure
 pc.v.reward_structure = "alt_block" # Options: prob, prob_block, alt, alt_block
-pc.v.randomized_n = [2,3,4] # randomly choose n trials per block from this list
+pc.v.randomized_n = [3,4,5] # randomly choose n trials per block from this list
 pc.v.n_rwd_per_block = pc.v.randomized_n[0]
 pc.v.rwd_count_per_block = 0
 
